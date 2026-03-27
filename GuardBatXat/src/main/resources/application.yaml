@@ -1,3 +1,5 @@
+server:
+  port: 8080
 spring:
   application:
     name: GuardBatXat
@@ -5,12 +7,18 @@ spring:
       url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/guard_bat_xat}
       username: ${SPRING_DATASOURCE_USERNAME:postgres}
       password: ${SPRING_DATASOURCE_PASSWORD:12345678}
+      driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.spatial.dialect.postgis.PostgisDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
   data:
     redis:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
+batxat:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:DayLaMotKhoaBaoMatCucKyDaiVaPhucTapCuaHeThongCanhBaoThienTaiBatXat2024!@#}
+      expiration: 86400000
