@@ -9,13 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SosRequest {
-
-    private String senderPhone;
-
-    private String message;
-
-    private Double lat;
-
-    private Double lng;
+public class RoutingRequest {
+    private Double startLat;
+    private Double startLng;
+    private Double endLat;
+    private Double endLng;
 }

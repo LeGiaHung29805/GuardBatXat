@@ -2,6 +2,7 @@ package com.example.GuardBatXat.controller;
 
 import com.example.GuardBatXat.dto.request.LocationCheckRequest;
 import com.example.GuardBatXat.dto.response.ApiResponse;
+import com.example.GuardBatXat.dto.response.EvacuationResponse;
 import com.example.GuardBatXat.dto.response.HeatmapProjection;
 import com.example.GuardBatXat.dto.response.LocationCheckResponse;
 import com.example.GuardBatXat.repository.HeatmapRepository;
@@ -41,6 +42,16 @@ public class CommunityMapController {
         return ResponseEntity.ok(ApiResponse.<LocationCheckResponse>builder()
                 .code(200)
                 .message("Đã đánh giá thành công vị trí.")
+                .data(response)
+                .build());
+    }
+    @PostMapping("/evacuation-route")
+    public ResponseEntity<ApiResponse<EvacuationResponse>> findEvacuationRoute(@RequestBody LocationCheckRequest request) {
+        EvacuationResponse response = riskService.findNearestSafeHavens(request);
+
+        return ResponseEntity.ok(ApiResponse.<EvacuationResponse>builder()
+                .code(200)
+                .message("Tìm điểm sơ tán thành công")
                 .data(response)
                 .build());
     }
