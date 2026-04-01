@@ -17,7 +17,7 @@ public interface HeatmapRepository extends JpaRepository<Building, Long> {
             "combined_score as weight, " +
             "risk_severity as severity " +
             "FROM get_combined_landslide_risk() " +
-            "WHERE combined_score >= 0.35",
+            "WHERE combined_score > 0",
             nativeQuery = true)
     List<HeatmapProjection> getLandslideHeatmap();
 
