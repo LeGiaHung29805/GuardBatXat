@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 @Configuration
-@EnableMethodSecurity
+//@EnableMethodSecurity
 public class SecurityConfig {
 
     // --- TẠM THỜI VÔ HIỆU HÓA USER DETAILS VÌ CHƯA CODE ENTITY USER ---
