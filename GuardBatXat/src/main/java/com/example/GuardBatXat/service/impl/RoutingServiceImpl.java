@@ -2,22 +2,34 @@ package com.example.GuardBatXat.service.impl;
 
 import com.example.GuardBatXat.dto.request.FindShelterRequest;
 import com.example.GuardBatXat.dto.request.RoutingRequest;
+import com.example.GuardBatXat.dto.response.RoutingResponse;
+import com.example.GuardBatXat.repository.RoadNodeRepository;
 import com.example.GuardBatXat.service.RoutingService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+<<<<<<< HEAD
 import org.springframework.web.client.HttpStatusCodeException; // Nhớ import cái này
 import org.springframework.web.client.RestTemplate;
+=======
+>>>>>>> 75bf3b6b54346f1a7ec0bf6cc90628ecd405c20a
 
-@Slf4j
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
+@RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
+
 
     private final String PYTHON_AI_URL = "http://localhost:5000/api/v1/ai/safe-routing";
     private final String PYTHON_SHELTER_URL = "http://localhost:5000/api/v1/ai/find-safe-shelter";
+    private final RoadNodeRepository roadNodeRepository;
+
     @Override
-    public Object getSafeRouteFromAI(RoutingRequest request) {
-        RestTemplate restTemplate = new RestTemplate();
+    public RoutingResponse findOptimalRoute(String strategyName, RoutingRequest request) {
+        // 1. Ánh xạ tọa độ người dùng bấm trên bản đồ thành Node giao thông
+        Long startNode = roadNodeRepository.findNearestNode(request.getStartLat(), request.getStartLng());
+        Long endNode = roadNodeRepository.findNearestNode(request.getEndLat(), request.getEndLng());
 
         try {
             log.info("Đang gọi AI Python tìm đường từ tọa độ: [{}, {}] đến [{}, {}]",
@@ -57,6 +69,27 @@ public class RoutingServiceImpl implements RoutingService {
         } catch (Exception e) {
             log.error("Lỗi kết nối AI: {}", e.getMessage());
             throw new RuntimeException("Hệ thống AI tìm điểm sơ tán đang bảo trì hoặc mất kết nối mạng!");
+        if (startNode == null || endNode == null) {
+            throw new RuntimeException("Khu vực này chưa có dữ liệu mạng lưới đường bộ!");
         }
+
+        /* * 2. TÍCH HỢP PGROUTING (VÙNG GIAO VIỆC CHO LEADER)
+         * Tại đây, bạn sẽ gọi một Native Query chọc vào hàm pgRouting của Leader.
+         * Ví dụ: roadEdgeRepository.calculateRoutePgRouting(startNode, endNode, strategyName);
+         * Vì hàm pgRouting phụ thuộc vào cách cấu hình thư viện C của PostgreSQL,
+         * dưới đây là dữ liệu trả về tạm thời (Mock Data) để bạn có thể test ngay giao diện Frontend.
+         */
+
+        List<double[]> mockPath = new ArrayList<>();
+        mockPath.add(new double[]{request.getStartLat(), request.getStartLng()});
+        mockPath.add(new double[]{(request.getStartLat() + request.getEndLat()) / 2, (request.getStartLng() + request.getEndLng()) / 2});
+        mockPath.add(new double[]{request.getEndLat(), request.getEndLng()});
+
+        return RoutingResponse.builder()
+                .strategyName(strategyName)
+                .totalDistance(12.5) // Giả định 12.5 km
+                .avgSlope(8.2)       // Giả định độ dốc trung bình
+                .pathPoints(mockPath)
+                .build();
     }
 }

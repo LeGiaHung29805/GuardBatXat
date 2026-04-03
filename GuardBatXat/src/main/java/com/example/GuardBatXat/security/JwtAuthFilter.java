@@ -18,7 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-//@Component
+@Component // bỏ comment để đưa nó vào bộ lọc bảo mật
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
