@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SosRequest {
+public class SosEntity { // Đổi tên thành Entity để không trùng với DTO SosRequest của Leader
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -35,12 +35,10 @@ public class SosRequest {
     @Column(columnDefinition = "geometry(Point, 4326)")
     private Point geom;
 
-    // Khóa ngoại liên kết với tòa nhà người dân đang đứng (nếu có)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "building_id")
     private Building building;
 
-    // Khóa ngoại liên kết với đội cứu hộ được giao nhiệm vụ
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_team_id")
     private User assignedTeam;
