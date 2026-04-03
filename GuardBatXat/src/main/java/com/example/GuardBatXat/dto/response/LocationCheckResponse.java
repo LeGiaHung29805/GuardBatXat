@@ -15,7 +15,7 @@ public class LocationCheckResponse {
     private String landslideRiskStatus;
     private Double floodDepth;     // Độ sâu ngập dự kiến (m)
     private Double aiLandslideProb;// Xác suất sạt lở AI (%)
-
+    private Double aiFloodProb;
     // Thông tin tòa nhà người dùng đang đứng
     private String buildingType;
     private Double distanceToWater;
