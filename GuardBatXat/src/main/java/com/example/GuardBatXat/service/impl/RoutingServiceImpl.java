@@ -6,7 +6,7 @@ import com.example.GuardBatXat.dto.response.RoutingResponse;
 import com.example.GuardBatXat.repository.RoadNodeRepository;
 import com.example.GuardBatXat.service.RoutingService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // Đã thêm import cho log
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j // Đã thêm để sử dụng log.info, log.warn
+@Slf4j // Khai báo log để dùng log.info, log.warn, log.error
 @Service
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
@@ -26,36 +26,34 @@ public class RoutingServiceImpl implements RoutingService {
 
     @Override
     public RoutingResponse findOptimalRoute(String strategyName, RoutingRequest request) {
-        // 1. Ánh xạ tọa độ người dùng bấm trên bản đồ thành Node giao thông
+        // 1. Ánh xạ tọa độ người dùng bấm trên bản đồ thành Node giao thông (Code của bạn bạn)
         Long startNode = roadNodeRepository.findNearestNode(request.getStartLat(), request.getStartLng());
         Long endNode = roadNodeRepository.findNearestNode(request.getEndLat(), request.getEndLng());
 
-        // Đã đưa code kiểm tra Node về đúng hàm
         if (startNode == null || endNode == null) {
             throw new RuntimeException("Khu vực này chưa có dữ liệu mạng lưới đường bộ!");
         }
 
-        RestTemplate restTemplate = new RestTemplate(); // Đã khai báo RestTemplate
+        RestTemplate restTemplate = new RestTemplate();
 
+        // 2. Ưu tiên gọi AI Python (Code của bạn)
         try {
             log.info("Đang gọi AI Python tìm đường từ tọa độ: [{}, {}] đến [{}, {}]",
                     request.getStartLat(), request.getStartLng(),
                     request.getEndLat(), request.getEndLng());
 
-            // Đã sửa kiểu trả về từ Object sang RoutingResponse để khớp với interface
             ResponseEntity<RoutingResponse> response = restTemplate.postForEntity(PYTHON_AI_URL, request, RoutingResponse.class);
             return response.getBody();
 
         } catch (HttpStatusCodeException e) {
+            // BẮT LỖI 404/400 TỪ PYTHON
             log.warn("AI Python từ chối tìm đường. Mã lỗi: {}", e.getStatusCode());
             throw new RuntimeException("Dự báo từ AI: Không tìm thấy đường đi an toàn. Vị trí đích có thể đã bị cô lập hoàn toàn do thiên tai.");
 
         } catch (Exception e) {
-            log.error("Lỗi mạng khi kết nối AI. Chuyển sang dùng Mock Data pgRouting... Chi tiết lỗi: {}", e.getMessage());
+            // 3. Nếu AI Server tắt hoặc lỗi mạng, dùng pgRouting làm dự phòng (Code của bạn bạn)
+            log.error("Lỗi mạng khi kết nối với module AI Python. Chuyển sang dùng pgRouting dự phòng! Chi tiết: {}", e.getMessage());
 
-            /* * 2. TÍCH HỢP PGROUTING (DỰ PHÒNG KHI AI CHẾT)
-             * Trả về dữ liệu tạm thời (Mock Data) để Frontend có thể test.
-             */
             List<double[]> mockPath = new ArrayList<>();
             mockPath.add(new double[]{request.getStartLat(), request.getStartLng()});
             mockPath.add(new double[]{(request.getStartLat() + request.getEndLat()) / 2, (request.getStartLng() + request.getEndLng()) / 2});
