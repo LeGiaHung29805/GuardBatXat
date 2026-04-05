@@ -2,12 +2,15 @@ package com.example.GuardBatXat.service.impl;
 
 import com.example.GuardBatXat.dto.request.BuildingRequest;
 import com.example.GuardBatXat.dto.request.RoadEdgeRequest;
+import com.example.GuardBatXat.dto.response.RoadEdgeListDto;
 import com.example.GuardBatXat.repository.BuildingRepository;
 import com.example.GuardBatXat.repository.RoadEdgeRepository;
 import com.example.GuardBatXat.service.AdminSpatialService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -52,5 +55,9 @@ public class AdminSpatialServiceImpl implements AdminSpatialService {
                 request.getLengthM(), request.getRoadCapacity(),
                 request.getIsBridge(), request.getGeomWkt()
         );
+    }
+    @Override
+    public List<RoadEdgeListDto> getAllRoadEdgesOptimized() {
+        return roadEdgeRepository.findAllOptimizedForAdmin();
     }
 }

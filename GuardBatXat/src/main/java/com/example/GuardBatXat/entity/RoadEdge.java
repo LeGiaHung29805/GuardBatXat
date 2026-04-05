@@ -46,6 +46,6 @@ public class RoadEdge {
     @Column(name = "cost_speed")
     private Double costSpeed;
 
-    @Column(columnDefinition = "geometry(LineString, 4326)")
+    @Column(name = "geometry", columnDefinition = "geometry(LineString, 4326)")
     private LineString geom;
 }
