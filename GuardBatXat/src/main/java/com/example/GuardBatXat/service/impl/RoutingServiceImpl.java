@@ -24,7 +24,6 @@ public class RoutingServiceImpl implements RoutingService {
     private final String PYTHON_SHELTER_URL = "http://localhost:5000/api/v1/ai/find-safe-shelter";
     private final RoadNodeRepository roadNodeRepository;
 
-
     @Override
     public Object getSafeRouteFromAI(RoutingRequest request) {
         RestTemplate restTemplate = new RestTemplate();
