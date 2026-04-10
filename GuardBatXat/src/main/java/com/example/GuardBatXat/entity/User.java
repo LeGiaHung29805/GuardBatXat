@@ -35,7 +35,7 @@ public class User {
     private String phoneNumber;
 
     // Mapping Khóa ngoại tới bảng Role
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 

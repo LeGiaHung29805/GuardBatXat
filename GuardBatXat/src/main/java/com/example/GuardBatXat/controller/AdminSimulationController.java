@@ -40,4 +40,5 @@ public class AdminSimulationController {
                 .data(simulationService.getSimulationStatistics(simulationId))
                 .build());
     }
+
 }

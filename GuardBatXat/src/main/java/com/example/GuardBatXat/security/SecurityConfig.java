@@ -22,14 +22,13 @@
     import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
     import java.util.Arrays;
     import java.util.List;
-
     @Configuration
-    @EnableMethodSecurity
+//@EnableMethodSecurity
     @RequiredArgsConstructor
     public class SecurityConfig {
 
-         private final UserDetailsServiceImpl userDetailsService;
-         private final JwtAuthFilter jwtAuthFilter;
+        private final UserDetailsServiceImpl userDetailsService;
+        private final JwtAuthFilter jwtAuthFilter;
 
         @Bean
         public PasswordEncoder passwordEncoder() {
@@ -71,18 +70,17 @@
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(auth -> auth
                             // 1. NHÓM PUBLIC
-    //                        .requestMatchers("/api/v1/auth/**").permitAll()
-    //                        .requestMatchers("/api/v1/map/**").permitAll()
-    //                        .requestMatchers("/api/v1/safety/**").permitAll()
-    //                        .requestMatchers("/api/v1/sos/send").permitAll()
-    //                        .requestMatchers("/api/v1/routing/**").permitAll()
-    //                        // 2. NHÓM PRIVATE
-    //                        .anyRequest().authenticated()
+                            //                        .requestMatchers("/api/v1/auth/**").permitAll()
+                            //                        .requestMatchers("/api/v1/map/**").permitAll()
+                            //                        .requestMatchers("/api/v1/safety/**").permitAll()
+                            //                        .requestMatchers("/api/v1/sos/send").permitAll()
+                            //                        .requestMatchers("/api/v1/routing/**").permitAll()
+                            //                        // 2. NHÓM PRIVATE
+                            //                        .anyRequest().authenticated()
                             .anyRequest().permitAll()
                     );
-
-             http.authenticationProvider(authenticationProvider());
-//             http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            http.authenticationProvider(authenticationProvider());
+//          http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
         }

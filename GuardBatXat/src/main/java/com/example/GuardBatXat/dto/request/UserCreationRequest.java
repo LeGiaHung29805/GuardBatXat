@@ -9,6 +9,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserCreationRequest {
+    @NotBlank(message = "Tên đăng nhập không được để trống")
+    @Size(min = 4, message = "Tên đăng nhập phải từ 5 ký tự trở lên")
+    private String username;
 
     @NotBlank(message = "Vui lòng nhập Email hoặc Số điện thoại")
     private String emailOrPhone; // Trường dùng chung để người dân nhập

@@ -2,30 +2,31 @@ package com.example.GuardBatXat.controller;
 
 import com.example.GuardBatXat.dto.request.RoutingRequest;
 import com.example.GuardBatXat.dto.response.ApiResponse;
-import com.example.GuardBatXat.dto.response.RoutingResponse;
+import com.example.GuardBatXat.dto.response.RoutingCompareResponse;
 import com.example.GuardBatXat.service.RoutingService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "*")
 @RestController
-@RequestMapping("/api/admin/routing") // ĐƯỜNG DẪN ADMIN
+@RequestMapping("/api/admin/routing")
 @RequiredArgsConstructor
 public class AdminRoutingController {
 
     private final RoutingService routingService;
 
-    @PostMapping("/{strategyName}")
-    public ResponseEntity<ApiResponse<RoutingResponse>> getRoute(
-            @PathVariable String strategyName,
-            @RequestBody @Valid RoutingRequest request) {
+    // ==========================================
+    // API TÌM ĐƯỜNG ADMIN (LẤY 3 LỘ TRÌNH CÙNG LÚC)
+    // ==========================================
+    @PostMapping("/compare")
+    public ResponseEntity<ApiResponse<RoutingCompareResponse>> compareRoutes(@RequestBody RoutingRequest request) {
 
-        return ResponseEntity.ok(ApiResponse.<RoutingResponse>builder()
+        RoutingCompareResponse data = routingService.findAdminCompareRoute(request);
+
+        return ResponseEntity.ok(ApiResponse.<RoutingCompareResponse>builder()
                 .code(200)
-                .message("Tìm đường thành công theo chiến lược: " + strategyName)
-                .data(routingService.findOptimalRoute(strategyName, request))
+                .message("Lấy dữ liệu đối chiếu 3 lộ trình thành công")
+                .data(data)
                 .build());
     }
 }
