@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
-@EnableMethodSecurity
+//@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -84,7 +84,7 @@ public class SecurityConfig {
                 );
 
          http.authenticationProvider(authenticationProvider());
-         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        // http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
