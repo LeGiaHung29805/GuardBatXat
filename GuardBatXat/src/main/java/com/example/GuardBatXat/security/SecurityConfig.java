@@ -71,14 +71,16 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // 1. NHÓM PUBLIC
-                        .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/map/**").permitAll()
-                        .requestMatchers("/api/v1/safety/**").permitAll()
-                        .requestMatchers("/api/v1/sos/send").permitAll()
-                        .requestMatchers("/api/v1/routing/**").permitAll()
-                        // 2. NHÓM PRIVATE
-                        .requestMatchers("/api/admin/routing/**").permitAll()
-                        .anyRequest().authenticated()
+
+//                        .requestMatchers("/api/v1/auth/**").permitAll()
+//                        .requestMatchers("/api/v1/map/**").permitAll()
+//                        .requestMatchers("/api/v1/safety/**").permitAll()
+//                        .requestMatchers("/api/v1/sos/send").permitAll()
+//                        .requestMatchers("/api/v1/routing/**").permitAll()
+//                        // 2. NHÓM PRIVATE
+//                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
+
                 );
 
          http.authenticationProvider(authenticationProvider());

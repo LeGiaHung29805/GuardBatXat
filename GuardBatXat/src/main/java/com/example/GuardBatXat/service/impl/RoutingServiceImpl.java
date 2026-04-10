@@ -27,7 +27,6 @@ public class RoutingServiceImpl implements RoutingService {
     private final RoadNodeRepository roadNodeRepository;
     private final String PYTHON_ADMIN_COMPARE_URL = "http://localhost:5000/api/v1/ai/admin-routing";
 
-
     @Override
     public Object getSafeRouteFromAI(RoutingRequest request) {
         RestTemplate restTemplate = new RestTemplate();
