@@ -77,6 +77,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/sos/send").permitAll()
                         .requestMatchers("/api/v1/routing/**").permitAll()
                         // 2. NHÓM PRIVATE
+                        .requestMatchers("/api/admin/routing/**").permitAll()
                         .anyRequest().authenticated()
                 );
 

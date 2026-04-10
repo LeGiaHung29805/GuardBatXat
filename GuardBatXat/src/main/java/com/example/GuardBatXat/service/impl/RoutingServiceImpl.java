@@ -54,10 +54,17 @@ public class RoutingServiceImpl implements RoutingService {
                 // 2. LẤY CHI PHÍ (Fix lỗi scope 'cost')
                 Double cost = Double.valueOf(body.get("total_mcdm_cost").toString());
 
+                // 3. KHAI BÁO STRATEGY NAME (Thêm phần này để hết lỗi)
+                // Lấy từ request (nếu RoutingRequest có trường này) hoặc gán mặc định
+                String strategyName = request.getStrategyName();
+                if (body.get("strategy") != null) {
+                    strategyName = body.get("strategy").toString();
+                }
+
                 return RoutingResponse.builder()
-                        .strategyName(strategyName)
-                        .totalDistance(cost) // Biến cost khai báo ngay phía trên nên hợp lệ
-                        .pathPoints(pathPoints) // Biến pathPoints đã đúng kiểu List<double[]>
+                        .strategyName(strategyName) // Lúc này IDE đã hiểu strategyName là gì
+                        .totalDistance(cost)
+                        .pathPoints(pathPoints)
                         .build();
             }
             throw new RuntimeException("AI không tìm được đường");
