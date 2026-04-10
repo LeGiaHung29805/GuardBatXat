@@ -1,5 +1,7 @@
 package com.example.GuardBatXat.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,11 +13,20 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SosRequest {
 
-    private String senderPhone;
+    @NotBlank(message = "Số điện thoại không được để trống")
+    private String senderPhone; // Đã khớp với tên leader
 
+    @NotBlank(message = "Nội dung kêu cứu không được để trống")
     private String message;
 
+    @NotNull(message = "Vĩ độ (lat) không được để trống")
     private Double lat;
 
+    @NotNull(message = "Kinh độ (lng) không được để trống")
     private Double lng;
+
+    private String senderName;
+    private Integer totalPeople;
+    private Integer elderlyCount;
+    private Integer childrenCount;
 }

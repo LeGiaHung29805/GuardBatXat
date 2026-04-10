@@ -1,4 +1,19 @@
 package com.example.GuardBatXat.service;
 
-public class UserService {
+import com.example.GuardBatXat.dto.request.UserCreationRequest;
+import com.example.GuardBatXat.dto.request.UserProfileRequest;
+import com.example.GuardBatXat.dto.request.UserUpdateRequest;
+import com.example.GuardBatXat.dto.response.UserProfileResponse;
+import com.example.GuardBatXat.dto.response.UserResponse;
+import java.util.List;
+
+public interface UserService {
+    List<UserResponse> getAllUsers();
+    UserResponse createUser(UserCreationRequest request);
+    void toggleUserStatus(Integer userId);
+    void deleteUser(Integer userId);
+    UserResponse updateUser(Integer userId, UserUpdateRequest request);
+    UserResponse getMyProfile(String identifier);
+    UserProfileResponse getMySurvivalProfile(String identifier);
+    UserProfileResponse updateMySurvivalProfile(String identifier, UserProfileRequest request);
 }

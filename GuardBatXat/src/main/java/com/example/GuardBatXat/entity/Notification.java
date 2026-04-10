@@ -33,6 +33,10 @@ public class Notification {
     @Column(name = "alert_level", length = 200)
     private String alertLevel;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_user_id")
+    private User targetUser;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }

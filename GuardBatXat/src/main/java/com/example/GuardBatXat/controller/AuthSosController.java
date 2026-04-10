@@ -3,6 +3,7 @@ package com.example.GuardBatXat.controller;
 import com.example.GuardBatXat.dto.request.SosRequest;
 import com.example.GuardBatXat.dto.response.ApiResponse;
 import com.example.GuardBatXat.service.SosService;
+import jakarta.validation.Valid; // Thêm import này
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,12 +11,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/sos")
 @RequiredArgsConstructor
-public class SosController {
+public class AuthSosController {
 
     private final SosService sosService;
 
     @PostMapping("/send")
-    public ResponseEntity<ApiResponse<String>> sendSosAlert(@RequestBody SosRequest requestDto) {
+    // Thêm @Valid vào đây
+    public ResponseEntity<ApiResponse<String>> sendSosAlert(@RequestBody @Valid SosRequest requestDto) {
 
         sosService.processSosRequest(requestDto);
 

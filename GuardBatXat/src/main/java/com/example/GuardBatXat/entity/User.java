@@ -16,6 +16,9 @@ public class User {
     @Column(name = "user_id")
     private Integer userId;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile userProfile;
+
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
@@ -32,7 +35,7 @@ public class User {
     private String phoneNumber;
 
     // Mapping Khóa ngoại tới bảng Role
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id")
     private Role role;
 
