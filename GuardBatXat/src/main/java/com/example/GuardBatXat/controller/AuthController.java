@@ -1,7 +1,11 @@
 package com.example.GuardBatXat.controller;
 
 import com.example.GuardBatXat.dto.request.LoginRequest;
+import com.example.GuardBatXat.dto.request.UserCreationRequest;
 import com.example.GuardBatXat.dto.response.ApiResponse;
+import com.example.GuardBatXat.dto.response.UserResponse;
+import com.example.GuardBatXat.security.JwtService;
+import com.example.GuardBatXat.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,37 +13,46 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth") // Đã đồng bộ với SecurityConfig
 @RequiredArgsConstructor
 public class AuthController {
 
-    // Đây là 2 thành phần lõi của Spring Security để kiểm tra user và tạo token
-    // (Nếu IDE báo đỏ ở JwtUtils, đừng lo, chúng ta sẽ xử lý nó ngay sau đây)
     private final AuthenticationManager authenticationManager;
-    // private final JwtUtils jwtUtils;
+    private final JwtService jwtService;
+    private final UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> authenticateUser(@RequestBody @Valid LoginRequest loginRequest) {
 
-        // 1. Kiểm tra tài khoản và mật khẩu
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+                new UsernamePasswordAuthenticationToken(loginRequest.getIdentifier(), loginRequest.getPassword()));
 
-        // 2. Lưu trạng thái đăng nhập vào Security Context
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // 3. Tạo chuỗi JWT Token (Đang tạm comment để chờ file JwtUtils)
-        // String jwt = jwtUtils.generateJwtToken(authentication);
-        String jwt = "day_la_token_gia_lap_cho_den_khi_co_jwt_utils";
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        // 4. Trả về Token cho Frontend
+        String jwt = jwtService.generateToken(userDetails);
+
         return ResponseEntity.ok(ApiResponse.<String>builder()
                 .code(200)
                 .message("Đăng nhập thành công!")
                 .data(jwt)
+                .build());
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<UserResponse>> registerUser(@RequestBody @Valid UserCreationRequest request) {
+
+        UserResponse newUser = userService.createUser(request);
+
+        return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
+                .code(200)
+                .message("Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ.")
+                .data(newUser)
                 .build());
     }
 }

@@ -6,7 +6,7 @@ import com.example.GuardBatXat.dto.response.RoutingCompareResponse;
 import com.example.GuardBatXat.dto.response.RoutingResponse;
 
 public interface RoutingService {
-//    Object getSafeRouteFromAI(RoutingRequest request);
+    Object getSafeRouteFromAI(RoutingRequest request);
     Object findSafeShelterFromAI(FindShelterRequest request);
     RoutingResponse findOptimalRoute(String strategyName, RoutingRequest request);
     RoutingCompareResponse findAdminCompareRoute(RoutingRequest request);

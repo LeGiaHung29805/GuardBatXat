@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/sos")
 @RequiredArgsConstructor
-public class SosController {
+public class AuthSosController {
 
     private final SosService sosService;
 

@@ -18,16 +18,17 @@ public class UserDetailsImpl implements UserDetails {
     private String username;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
+    private boolean isActive;
 
     public static UserDetailsImpl build(User user) {
-        // Lấy tên Role từ DB (ví dụ: "ADMIN", "RESCUE_TEAM") thêm tiền tố "ROLE_" theo chuẩn Spring
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleName());
 
         return new UserDetailsImpl(
                 user.getUserId(),
                 user.getUsername(),
                 user.getPasswordHash(),
-                Collections.singletonList(authority)
+                Collections.singletonList(authority),
+                user.getIsActive() != null ? user.getIsActive() : true
         );
     }
 
@@ -41,5 +42,5 @@ public class UserDetailsImpl implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; } // Thực tế bạn có thể map với user.getIsActive()
+    public boolean isEnabled() { return isActive; }
 }

@@ -47,6 +47,10 @@ public class RescueMission {
     @Column(name = "dangerous_segments_count")
     private Integer dangerousSegmentsCount;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sos_id")
+    private SosEntity sosRequest;
+
     @Column(name = "route_geom", columnDefinition = "geometry(LineString, 4326)")
     private LineString routeGeom;
 }

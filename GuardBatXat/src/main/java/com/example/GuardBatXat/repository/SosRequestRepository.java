@@ -17,7 +17,7 @@ public interface SosRequestRepository extends JpaRepository<SosEntity, Integer> 
     // Logic 2: Lưu dữ liệu không gian (Dùng khi người dân gửi SOS)
     @Modifying
     @Query(value = """
-        INSERT INTO batxat_sos_requests (sender_phone, message, gps_lat, gps_lng, geometry, status)
+        INSERT INTO batxat_sos_requests (sender_phone, message, gps_lat, gps_lng, geom, status)
         VALUES (
             :phone, :message, :lat, :lng, 
             ST_SetSRID(ST_MakePoint(:lng, :lat), 4326),

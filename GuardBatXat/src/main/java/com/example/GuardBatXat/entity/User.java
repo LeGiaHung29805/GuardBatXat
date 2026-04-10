@@ -16,6 +16,9 @@ public class User {
     @Column(name = "user_id")
     private Integer userId;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile userProfile;
+
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 

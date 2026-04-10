@@ -18,4 +18,5 @@ public interface UserMapper {
 
     @Mapping(source = "role.roleName", target = "roleName")
     UserResponse toUserResponse(User user);
+
 }
