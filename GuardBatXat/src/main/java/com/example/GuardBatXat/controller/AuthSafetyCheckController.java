@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/safety")
 @RequiredArgsConstructor
-public class SafetyCheckController {
+public class AuthSafetyCheckController {
 
     private final SafetyCheckService safetyCheckService;
 

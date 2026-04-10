@@ -24,4 +24,9 @@ public class SosRequest {
 
     @NotNull(message = "Kinh độ (lng) không được để trống")
     private Double lng;
+
+    private String senderName;
+    private Integer totalPeople;
+    private Integer elderlyCount;
+    private Integer childrenCount;
 }

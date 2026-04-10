@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/api/v1/map")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-public class CommunityMapController {
+public class AuthCommunityMapController {
     private final RiskService riskService;
     @Autowired
     private HeatmapRepository heatmapRepository;

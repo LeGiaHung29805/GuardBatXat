@@ -1,6 +1,5 @@
 package com.example.GuardBatXat.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -10,9 +9,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserCreationRequest {
-    @NotBlank(message = "Tên đăng nhập không được để trống")
-    @Size(min = 5, message = "Tên đăng nhập phải từ 5 ký tự trở lên")
-    private String username;
+
+    @NotBlank(message = "Vui lòng nhập Email hoặc Số điện thoại")
+    private String emailOrPhone; // Trường dùng chung để người dân nhập
 
     @NotBlank(message = "Mật khẩu không được để trống")
     @Size(min = 6, message = "Mật khẩu phải từ 6 ký tự")
@@ -20,12 +19,6 @@ public class UserCreationRequest {
 
     private String fullName;
 
-    @Email(message = "Email không hợp lệ")
-    private String email;
-
-    private String phoneNumber;
-
-    @NotBlank(message = "Phải gán quyền (Role)")
     private String roleName;
 
     private String assignedStation;

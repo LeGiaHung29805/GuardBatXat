@@ -1,10 +1,14 @@
 package com.example.GuardBatXat.dto.response;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class LocationCheckResponse {
     private boolean isSafe;
     private String alertLevel; // SAFE, WARNING, DANGER
