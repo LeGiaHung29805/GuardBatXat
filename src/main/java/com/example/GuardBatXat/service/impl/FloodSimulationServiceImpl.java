@@ -12,12 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import com.example.GuardBatXat.websocket.NotificationSender;
 
 @Service
 @RequiredArgsConstructor
 public class FloodSimulationServiceImpl implements FloodSimulationService {
 
     private final FloodSimulationRepository simulationRepository;
+    private final NotificationSender notificationSender;
 
     @Override
     @Transactional
@@ -32,7 +34,7 @@ public class FloodSimulationServiceImpl implements FloodSimulationService {
         List<FloodSimulation> results = simulationRepository.findBySimulationId(UUID.fromString(simId));
 
         // 4. Map dữ liệu sang DTO, đồng thời chiết xuất tọa độ (X, Y) từ MultiPolygon
-        return results.stream().map(sim -> FloodSimulationResponse.builder()
+        List<FloodSimulationResponse> responseList = results.stream().map(sim -> FloodSimulationResponse.builder()
                 .buildingId(sim.getBuilding().getId())
                 .depth(sim.getDepthImpact())
                 .status(sim.getRiskStatus())
@@ -40,6 +42,16 @@ public class FloodSimulationServiceImpl implements FloodSimulationService {
                 .lat(sim.getBuilding().getGeom().getCentroid().getY())
                 .build()
         ).collect(Collectors.toList());
+
+        // 5. Bắn WebSocket thông báo có kết quả mô phỏng mới
+        try {
+            notificationSender.sendSystemNotification("/topic/simulation-results", responseList);
+        } catch (Exception e) {
+            // Log lỗi nhưng không làm fail API
+            e.printStackTrace();
+        }
+
+        return responseList;
     }
 
     @Override

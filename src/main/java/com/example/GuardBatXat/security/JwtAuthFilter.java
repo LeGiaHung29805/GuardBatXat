@@ -13,6 +13,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.example.GuardBatXat.service.RedisCacheService;
 import java.io.IOException;
 
 @Component
@@ -21,6 +22,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final RedisCacheService redisCacheService;
 
     @Override
     protected void doFilterInternal(
@@ -39,6 +41,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         jwt = authHeader.substring(7);
+
+        // Kiểm tra xem token có nằm trong blacklist không (đã đăng xuất)
+        if (redisCacheService.getCache("blacklist:" + jwt) != null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token has been revoked. Please login again.");
+            return;
+        }
 
         username = jwtService.extractUsername(jwt);
 

@@ -29,4 +29,16 @@ public class AuthSosController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/live-location")
+    public ResponseEntity<ApiResponse<String>> updateLiveLocation(@RequestBody @Valid com.example.GuardBatXat.dto.request.LiveLocationRequest requestDto) {
+        sosService.updateLiveLocation(requestDto);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Success", "Cập nhật vị trí thành công"));
+    }
+
+    @PostMapping("/chat")
+    public ResponseEntity<ApiResponse<String>> sendChat(@RequestBody @Valid com.example.GuardBatXat.dto.request.ChatRequest requestDto) {
+        sosService.sendEmergencyChat(requestDto);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Success", "Đã gửi tin nhắn"));
+    }
 }

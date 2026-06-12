@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.GuardBatXat.dto.request.UserUpdateRequest;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final UserProfileMapper userProfileMapper;
     @Override
+    @Cacheable(value = "users", key = "'all'")
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
                 .map(userMapper::toUserResponse)
@@ -38,6 +41,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public UserResponse createUser(UserCreationRequest request) {
         String input = request.getEmailOrPhone().trim();
 
@@ -82,6 +86,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public void toggleUserStatus(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
@@ -96,6 +101,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public void deleteUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
@@ -104,6 +110,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public UserResponse updateUser(Integer userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
@@ -129,6 +136,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     @Transactional
+    @Cacheable(value = "userProfile", key = "#identifier")
     public UserResponse getMyProfile(String identifier) {
         User user = userRepository.findByIdentifier(identifier)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy dữ liệu người dùng!"));
@@ -136,6 +144,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     @Transactional
+    @Cacheable(value = "survivalProfile", key = "#identifier")
     public UserProfileResponse getMySurvivalProfile(String identifier) {
         User user = userRepository.findByIdentifier(identifier)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
@@ -144,6 +153,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {"userProfile", "survivalProfile", "users"}, allEntries = true)
     public UserProfileResponse updateMySurvivalProfile(String identifier, UserProfileRequest request) {
         User user = userRepository.findByIdentifier(identifier)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));

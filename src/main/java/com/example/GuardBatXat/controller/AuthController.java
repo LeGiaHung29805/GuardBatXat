@@ -5,7 +5,9 @@ import com.example.GuardBatXat.dto.request.UserCreationRequest;
 import com.example.GuardBatXat.dto.response.ApiResponse;
 import com.example.GuardBatXat.dto.response.UserResponse;
 import com.example.GuardBatXat.security.JwtService;
+import com.example.GuardBatXat.service.RedisCacheService;
 import com.example.GuardBatXat.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserService userService;
+    private final RedisCacheService redisCacheService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<String>> authenticateUser(@RequestBody @Valid LoginRequest loginRequest) {
@@ -53,6 +56,22 @@ public class AuthController {
                 .code(200)
                 .message("Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ.")
                 .data(newUser)
+                .build());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logoutUser(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String jwt = authHeader.substring(7);
+            long remainingTime = jwtService.getRemainingTimeInMinutes(jwt);
+            if (remainingTime > 0) {
+                redisCacheService.setCache("blacklist:" + jwt, "logout", remainingTime);
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.<Void>builder()
+                .code(200)
+                .message("Đăng xuất thành công!")
                 .build());
     }
 }

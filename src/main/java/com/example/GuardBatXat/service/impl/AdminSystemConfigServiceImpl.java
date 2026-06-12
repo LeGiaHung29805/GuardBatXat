@@ -9,8 +9,11 @@ import com.example.GuardBatXat.service.AdminSystemConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
+import com.example.GuardBatXat.websocket.NotificationSender;
 
 @Service
 @RequiredArgsConstructor
@@ -18,14 +21,17 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
 
     private final ModelRegistryRepository modelRegistryRepository;
     private final AhpWeightRepository ahpWeightRepository;
+    private final NotificationSender notificationSender;
 
     @Override
+    @Cacheable(value = "systemModels", key = "'allModels'")
     public List<ModelRegistry> getAllModels() {
         return modelRegistryRepository.findAll();
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "systemModels", allEntries = true)
     public ModelRegistry activateModel(Integer modelId) {
         ModelRegistry targetModel = modelRegistryRepository.findById(modelId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mô hình AI!"));
@@ -35,7 +41,16 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
 
         // Bước 2: Bật model được Admin chọn
         targetModel.setIsActive(true);
-        return modelRegistryRepository.save(targetModel);
+        ModelRegistry savedModel = modelRegistryRepository.save(targetModel);
+
+        // Phát thông báo cho Client biết AI Model đã đổi
+        try {
+            notificationSender.sendSystemNotification("/topic/system-config-updates", "AI Model Changed: " + savedModel.getModelName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return savedModel;
     }
 
     @Override
@@ -61,6 +76,15 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         weight.setWBridge(request.getWBridge());
         weight.setWReport(request.getWReport());
 
-        return ahpWeightRepository.save(weight);
+        AhpWeight savedWeight = ahpWeightRepository.save(weight);
+
+        // Phát thông báo cho Client biết trọng số tìm đường đã đổi
+        try {
+            notificationSender.sendSystemNotification("/topic/system-config-updates", "AHP Weights Changed for: " + strategyName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return savedWeight;
     }
 }
