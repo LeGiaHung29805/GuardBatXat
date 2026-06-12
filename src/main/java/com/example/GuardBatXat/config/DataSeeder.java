@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.config;
+import com.example.GuardBatXat.dto.request.rescue.SosRequest;
 
 import com.example.GuardBatXat.entity.Role;
 import com.example.GuardBatXat.entity.User;
@@ -60,9 +61,9 @@ public class DataSeeder implements CommandLineRunner {
 
         // Seed SOS Requests for Rescue Team to see
         if (sosRequestRepository.count() == 0) {
-            sosRequestRepository.insertSosRequestNative("0909123456", "3 người mắc kẹt trên mái nhà, nước dâng nhanh!", 22.62, 103.72);
-            sosRequestRepository.insertSosRequestNative("0909234567", "Nước ngập 1.5m, cần di dời 2 người già", 22.605, 103.71);
-            sosRequestRepository.insertSosRequestNative("0909345678", "Đất sạt lở chia cắt đường, cần hỗ trợ y tế", 22.63, 103.725);
+            sosRequestRepository.insertSosRequestNative("0909123456", "3 người mắc kẹt trên mái nhà, nước dâng nhanh!", 22.62, 103.72, "Người dân 1", 3, 0, 0, null);
+            sosRequestRepository.insertSosRequestNative("0909234567", "Nước ngập 1.5m, cần di dời 2 người già", 22.605, 103.71, "Người dân 2", 2, 2, 0, null);
+            sosRequestRepository.insertSosRequestNative("0909345678", "Đất sạt lở chia cắt đường, cần hỗ trợ y tế", 22.63, 103.725, "Người dân 3", 1, 0, 0, null);
             System.out.println("[GuardBatXat] Đã tự động bơm 3 tín hiệu SOS mồi vào Database!");
         }
     }

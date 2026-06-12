@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.exception;
 
-import com.example.GuardBatXat.dto.response.ApiResponse;
+import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;

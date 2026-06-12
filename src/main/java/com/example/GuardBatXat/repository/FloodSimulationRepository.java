@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.repository;
 
-import com.example.GuardBatXat.dto.response.FloodStatisticDto;
+import com.example.GuardBatXat.dto.response.commander.FloodStatisticDto;
 import com.example.GuardBatXat.entity.FloodSimulation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -32,7 +32,7 @@ public interface FloodSimulationRepository extends JpaRepository<FloodSimulation
     List<Double> findAllSimulatedLevels();
 
     @Query("""
-    SELECT new com.example.GuardBatXat.dto.response.FloodStatisticDto(
+    SELECT new com.example.GuardBatXat.dto.response.commander.FloodStatisticDto(
         f.riskStatus, 
         COUNT(f.id), 
         SUM(f.building.areaInMeters), 

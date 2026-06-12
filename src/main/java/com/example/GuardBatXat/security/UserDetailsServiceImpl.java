@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.security;
+import com.example.GuardBatXat.entity.Role;
 
 import com.example.GuardBatXat.entity.User;
 import com.example.GuardBatXat.repository.UserRepository;

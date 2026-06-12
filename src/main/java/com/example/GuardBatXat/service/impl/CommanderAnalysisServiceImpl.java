@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.entity.Building;
 
 import com.example.GuardBatXat.repository.CommanderAnalysisRepository;
 import com.example.GuardBatXat.service.CommanderAnalysisService;

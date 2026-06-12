@@ -1,7 +1,14 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.repository.SosUpdateLogRepository;
+import com.example.GuardBatXat.entity.SosUpdateLog;
+import com.example.GuardBatXat.entity.Notification;
+import com.example.GuardBatXat.dto.response.rescue.SosUpdateLogResponse;
+import com.example.GuardBatXat.dto.request.rescue.SosUpdateLogRequest;
+import com.example.GuardBatXat.dto.request.rescue.LiveLocationRequest;
+import com.example.GuardBatXat.dto.request.rescue.ChatRequest;
 
-import com.example.GuardBatXat.dto.request.SosRequest;
-import com.example.GuardBatXat.dto.response.SosResponse;
+import com.example.GuardBatXat.dto.request.rescue.SosRequest;
+import com.example.GuardBatXat.dto.response.rescue.SosResponse;
 import com.example.GuardBatXat.entity.SosEntity;
 import com.example.GuardBatXat.entity.User;
 import com.example.GuardBatXat.repository.SosRequestRepository;
@@ -36,7 +43,12 @@ public class SosServiceImpl implements SosService {
                 requestDto.getSenderPhone(),
                 requestDto.getMessage(),
                 requestDto.getLat(),
-                requestDto.getLng()
+                requestDto.getLng(),
+                requestDto.getSenderName() != null ? requestDto.getSenderName() : "Người dân",
+                requestDto.getTotalPeople() != null ? requestDto.getTotalPeople() : 1,
+                requestDto.getElderlyCount() != null ? requestDto.getElderlyCount() : 0,
+                requestDto.getChildrenCount() != null ? requestDto.getChildrenCount() : 0,
+                null
         );
 
         // Bắn WebSocket tới các tài khoản có role COMMANDER / RESCUE_TEAM
@@ -47,6 +59,27 @@ public class SosServiceImpl implements SosService {
             log.info("Đã phát tín hiệu SOS Real-time tới trung tâm chỉ huy.");
         } catch (Exception e) {
             log.error("Lỗi khi phát tín hiệu WebSocket: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void updateLiveLocation(com.example.GuardBatXat.dto.request.rescue.LiveLocationRequest request) {
+        log.info("Cập nhật vị trí Live Location cho {}: [{}, {}]", request.getEntityId(), request.getLat(), request.getLng());
+        try {
+            notificationSender.sendSystemNotification("/topic/rescue-tracking", request);
+        } catch (Exception e) {
+            log.error("Lỗi gửi Live Location qua WebSocket: {}", e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendEmergencyChat(com.example.GuardBatXat.dto.request.rescue.ChatRequest request) {
+        log.info("SOS Chat từ {} (SOS ID: {}): {}", request.getSender(), request.getSosId(), request.getMessage());
+        try {
+            String destination = "/topic/chat/sos/" + request.getSosId();
+            notificationSender.sendSystemNotification(destination, request);
+        } catch (Exception e) {
+            log.error("Lỗi gửi tin nhắn Chat qua WebSocket: {}", e.getMessage());
         }
     }
 
@@ -100,14 +133,14 @@ public class SosServiceImpl implements SosService {
     }
 
     @Override
-    public List<com.example.GuardBatXat.dto.response.SosUpdateLogResponse> getSosUpdates(Integer sosId) {
+    public List<com.example.GuardBatXat.dto.response.rescue.SosUpdateLogResponse> getSosUpdates(Integer sosId) {
         List<com.example.GuardBatXat.entity.SosUpdateLog> logs = sosUpdateLogRepository.findBySosRequestIdOrderByCreatedAtDesc(sosId);
         return logs.stream().map(log -> {
             List<String> imagesList = null;
             if (log.getImages() != null && !log.getImages().isEmpty()) {
                 imagesList = java.util.Arrays.asList(log.getImages().split(",,,"));
             }
-            return com.example.GuardBatXat.dto.response.SosUpdateLogResponse.builder()
+            return com.example.GuardBatXat.dto.response.rescue.SosUpdateLogResponse.builder()
                     .id(log.getId())
                     .missionId(sosId)
                     .status(log.getUpdateStatus())
@@ -122,7 +155,7 @@ public class SosServiceImpl implements SosService {
 
     @Override
     @Transactional
-    public void addSosUpdate(Integer sosId, com.example.GuardBatXat.dto.request.SosUpdateLogRequest request, String identifier) {
+    public void addSosUpdate(Integer sosId, com.example.GuardBatXat.dto.request.rescue.SosUpdateLogRequest request, String identifier) {
         SosEntity sos = sosRequestRepository.findById(sosId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy SOS"));
 

@@ -1,9 +1,9 @@
 package com.example.GuardBatXat.service;
 
-import com.example.GuardBatXat.dto.request.FindShelterRequest;
-import com.example.GuardBatXat.dto.request.RoutingRequest;
-import com.example.GuardBatXat.dto.response.RoutingCompareResponse;
-import com.example.GuardBatXat.dto.response.RoutingResponse;
+import com.example.GuardBatXat.dto.request.rescue.FindShelterRequest;
+import com.example.GuardBatXat.dto.request.rescue.RoutingRequest;
+import com.example.GuardBatXat.dto.response.rescue.RoutingCompareResponse;
+import com.example.GuardBatXat.dto.response.rescue.RoutingResponse;
 
 public interface RoutingService {
     Object getSafeRouteFromAI(RoutingRequest request);

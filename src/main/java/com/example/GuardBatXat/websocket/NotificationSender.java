@@ -1,4 +1,6 @@
 package com.example.GuardBatXat.websocket;
+import com.example.GuardBatXat.entity.Notification;
+import com.example.GuardBatXat.dto.request.rescue.SosRequest;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

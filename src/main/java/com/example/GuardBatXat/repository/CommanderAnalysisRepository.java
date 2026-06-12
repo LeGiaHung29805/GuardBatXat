@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.repository;
+import com.example.GuardBatXat.entity.Building;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;

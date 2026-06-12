@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.repository;
 
-import com.example.GuardBatXat.dto.response.RoadEdgeListDto;
+import com.example.GuardBatXat.dto.response.admin.RoadEdgeListDto;
 import com.example.GuardBatXat.entity.RoadEdge;
 import com.example.GuardBatXat.entity.RoadEdgeId;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,6 +23,6 @@ public interface RoadEdgeRepository extends JpaRepository<RoadEdge, RoadEdgeId> 
             @Param("length") Double length, @Param("capacity") Integer capacity,
             @Param("isBridge") Integer isBridge, @Param("wkt") String wkt
     );
-    @Query("SELECT new com.example.GuardBatXat.dto.response.RoadEdgeListDto(e.key, e.u, e.v, e.lengthM, e.avgSlope) FROM RoadEdge e")
+    @Query("SELECT new com.example.GuardBatXat.dto.response.admin.RoadEdgeListDto(e.key, e.u, e.v, e.lengthM, e.avgSlope) FROM RoadEdge e")
     List<RoadEdgeListDto> findAllOptimizedForAdmin();
 }

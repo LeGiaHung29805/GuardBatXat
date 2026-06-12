@@ -1,7 +1,9 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.entity.Notification;
+import com.example.GuardBatXat.entity.Building;
 
-import com.example.GuardBatXat.dto.response.FloodSimulationResponse;
-import com.example.GuardBatXat.dto.response.FloodStatisticDto;
+import com.example.GuardBatXat.dto.response.commander.FloodSimulationResponse;
+import com.example.GuardBatXat.dto.response.commander.FloodStatisticDto;
 import com.example.GuardBatXat.entity.FloodSimulation;
 import com.example.GuardBatXat.repository.FloodSimulationRepository;
 import com.example.GuardBatXat.service.FloodSimulationService;

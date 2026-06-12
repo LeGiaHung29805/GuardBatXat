@@ -1,27 +1,29 @@
 server:
   port: 8080
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: GuardBatXat
   datasource:
-      url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/guardbatxat}
-      username: ${SPRING_DATASOURCE_USERNAME:postgres}
-      password: ${SPRING_DATASOURCE_PASSWORD:tung2005}
+      url: ${SPRING_DATASOURCE_URL}
+      username: ${SPRING_DATASOURCE_USERNAME}
+      password: ${SPRING_DATASOURCE_PASSWORD}
       driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     show-sql: true
   data:
     redis:
-      host: ${SPRING_REDIS_HOST:localhost}
-      port: ${SPRING_REDIS_PORT:6379}
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
       database: 0
 batxat:
   security:
     jwt:
-      secret: ${JWT_SECRET:DayLaMotKhoaBaoMatCucKyDaiVaPhucTapCuaHeThongCanhBaoThienTaiBatXat2024!@#}
+      secret: ${JWT_SECRET}
       expiration: 86400000
 management:
   endpoints:

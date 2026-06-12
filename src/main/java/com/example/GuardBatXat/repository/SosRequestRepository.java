@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.repository;
+import com.example.GuardBatXat.dto.request.rescue.SosRequest;
 
 import com.example.GuardBatXat.entity.SosEntity;
 import org.springframework.data.jpa.repository.JpaRepository;

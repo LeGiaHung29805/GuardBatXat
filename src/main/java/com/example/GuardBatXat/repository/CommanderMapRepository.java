@@ -1,7 +1,7 @@
 package com.example.GuardBatXat.repository;
 
-import com.example.GuardBatXat.dto.response.CommanderFloodProjection;
-import com.example.GuardBatXat.dto.response.CommanderLandslideProjection;
+import com.example.GuardBatXat.dto.response.commander.CommanderFloodProjection;
+import com.example.GuardBatXat.dto.response.commander.CommanderLandslideProjection;
 import com.example.GuardBatXat.entity.Building;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

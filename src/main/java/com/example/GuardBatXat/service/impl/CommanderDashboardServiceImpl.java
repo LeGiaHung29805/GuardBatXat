@@ -1,7 +1,10 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.repository.FloodSimulationRepository;
+import com.example.GuardBatXat.repository.CommanderAnalysisRepository;
+import com.example.GuardBatXat.entity.FloodSimulation;
 
-import com.example.GuardBatXat.dto.response.CommanderFloodProjection;
-import com.example.GuardBatXat.dto.response.CommanderLandslideProjection;
+import com.example.GuardBatXat.dto.response.commander.CommanderFloodProjection;
+import com.example.GuardBatXat.dto.response.commander.CommanderLandslideProjection;
 import com.example.GuardBatXat.repository.CommanderMapRepository;
 import com.example.GuardBatXat.service.CommanderDashboardService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +19,7 @@ public class CommanderDashboardServiceImpl implements CommanderDashboardService 
 
     private final CommanderMapRepository commanderMapRepository;
     private final com.example.GuardBatXat.repository.FloodSimulationRepository floodSimulationRepository;
+    private final com.example.GuardBatXat.repository.CommanderAnalysisRepository analysisRepository;
 
     @Override
     public List<CommanderFloodProjection> getCommanderFloodHeatmap(Double waterLevel) {
@@ -54,5 +58,27 @@ public class CommanderDashboardServiceImpl implements CommanderDashboardService 
         }
 
         return scenarios;
+    }
+
+    @Override
+    public java.util.Map<String, Object> getDashboardStats(Double level) {
+        java.util.Map<String, Object> stats = new java.util.HashMap<>();
+
+        // 1. Lấy dữ liệu ngập lụt TỰ ĐỘNG KHỚP với Heatmap
+        List<CommanderFloodProjection> floodData = getCommanderFloodHeatmap(level);
+
+        int nhaBiNgap = floodData.size();
+        int nguoiCanSoTan = floodData.stream().mapToInt(f -> f.getSo_nguoi() != null ? f.getSo_nguoi() : 0).sum();
+        int dienTichNgap = (int) floodData.stream().mapToDouble(f -> f.getDien_tich() != null ? f.getDien_tich() : 0.0).sum();
+
+        // 2. Đồng bộ "Đường bị chặn" với phần Phân tích (Gộp cả Ngập lụt và Sạt lở)
+        int duongBiChan = analysisRepository.countFloodedRoads(level);
+
+        stats.put("nha_bi_ngap", nhaBiNgap);
+        stats.put("dien_tich_ngap_m2", dienTichNgap);
+        stats.put("nguoi_can_so_tan", nguoiCanSoTan);
+        stats.put("duong_bi_chan", duongBiChan);
+
+        return stats;
     }
 }

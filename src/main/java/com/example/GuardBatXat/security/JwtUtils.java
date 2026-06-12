@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.security;
+import com.example.GuardBatXat.entity.User;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
