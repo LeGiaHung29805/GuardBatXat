@@ -1,8 +1,10 @@
 package com.example.GuardBatXat.service;
+import com.example.GuardBatXat.entity.RoadEdge;
+import com.example.GuardBatXat.entity.Building;
 
-import com.example.GuardBatXat.dto.request.BuildingRequest;
-import com.example.GuardBatXat.dto.request.RoadEdgeRequest;
-import com.example.GuardBatXat.dto.response.RoadEdgeListDto;
+import com.example.GuardBatXat.dto.request.admin.BuildingRequest;
+import com.example.GuardBatXat.dto.request.admin.RoadEdgeRequest;
+import com.example.GuardBatXat.dto.response.admin.RoadEdgeListDto;
 
 import java.util.List;
 import java.util.Map;

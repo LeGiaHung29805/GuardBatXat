@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.service;
 
-import com.example.GuardBatXat.dto.response.HeatmapProjection;
+import com.example.GuardBatXat.dto.response.commander.HeatmapProjection;
 import com.example.GuardBatXat.repository.HeatmapRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

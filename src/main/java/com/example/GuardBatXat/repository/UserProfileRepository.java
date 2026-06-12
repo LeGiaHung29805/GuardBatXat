@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.repository;
+import com.example.GuardBatXat.entity.User;
 
 import com.example.GuardBatXat.entity.UserProfile;
 import org.springframework.data.jpa.repository.JpaRepository;

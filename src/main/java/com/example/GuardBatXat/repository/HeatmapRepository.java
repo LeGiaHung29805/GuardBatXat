@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.repository;
 
-import com.example.GuardBatXat.dto.response.HeatmapProjection;
+import com.example.GuardBatXat.dto.response.commander.HeatmapProjection;
 import com.example.GuardBatXat.entity.Building;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

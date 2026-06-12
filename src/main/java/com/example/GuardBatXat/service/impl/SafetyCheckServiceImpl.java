@@ -1,7 +1,8 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.entity.Notification;
 
-import com.example.GuardBatXat.dto.request.LocationCheckRequest;
-import com.example.GuardBatXat.dto.response.LocationCheckResponse;
+import com.example.GuardBatXat.dto.request.rescue.LocationCheckRequest;
+import com.example.GuardBatXat.dto.response.rescue.LocationCheckResponse;
 import com.example.GuardBatXat.repository.SafetyCheckRepository;
 import com.example.GuardBatXat.service.SafetyCheckService;
 import lombok.RequiredArgsConstructor;

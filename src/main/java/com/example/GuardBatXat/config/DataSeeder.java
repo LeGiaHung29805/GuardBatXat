@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.config;
+import com.example.GuardBatXat.dto.request.rescue.SosRequest;
 
 import com.example.GuardBatXat.entity.Role;
 import com.example.GuardBatXat.entity.User;

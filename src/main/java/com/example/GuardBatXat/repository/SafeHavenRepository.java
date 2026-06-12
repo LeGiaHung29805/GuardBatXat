@@ -1,7 +1,7 @@
 package com.example.GuardBatXat.repository;
 
 import com.example.GuardBatXat.entity.SafeHaven;
-import com.example.GuardBatXat.dto.response.SafeHavenProjection;
+import com.example.GuardBatXat.dto.response.rescue.SafeHavenProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

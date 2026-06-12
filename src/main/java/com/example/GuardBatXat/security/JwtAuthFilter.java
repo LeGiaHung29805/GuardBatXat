@@ -1,4 +1,5 @@
 package com.example.GuardBatXat.security;
+import com.example.GuardBatXat.entity.User;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

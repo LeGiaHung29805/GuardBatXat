@@ -1,9 +1,9 @@
 package com.example.GuardBatXat.service.impl;
 
-import com.example.GuardBatXat.dto.request.UserCreationRequest;
-import com.example.GuardBatXat.dto.request.UserProfileRequest;
-import com.example.GuardBatXat.dto.response.UserProfileResponse;
-import com.example.GuardBatXat.dto.response.UserResponse;
+import com.example.GuardBatXat.dto.request.auth.UserCreationRequest;
+import com.example.GuardBatXat.dto.request.auth.UserProfileRequest;
+import com.example.GuardBatXat.dto.response.auth.UserProfileResponse;
+import com.example.GuardBatXat.dto.response.auth.UserResponse;
 import com.example.GuardBatXat.entity.Role;
 import com.example.GuardBatXat.entity.User;
 import com.example.GuardBatXat.entity.UserProfile;
@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.example.GuardBatXat.dto.request.UserUpdateRequest;
+import com.example.GuardBatXat.dto.request.auth.UserUpdateRequest;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import java.util.List;

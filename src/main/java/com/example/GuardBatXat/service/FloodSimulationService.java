@@ -1,7 +1,8 @@
 package com.example.GuardBatXat.service;
+import com.example.GuardBatXat.entity.FloodSimulation;
 
-import com.example.GuardBatXat.dto.response.FloodSimulationResponse;
-import com.example.GuardBatXat.dto.response.FloodStatisticDto;
+import com.example.GuardBatXat.dto.response.commander.FloodSimulationResponse;
+import com.example.GuardBatXat.dto.response.commander.FloodStatisticDto;
 
 import java.util.List;
 

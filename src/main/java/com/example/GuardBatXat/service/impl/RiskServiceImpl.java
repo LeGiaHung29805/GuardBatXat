@@ -1,9 +1,11 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.entity.SafeHaven;
+import com.example.GuardBatXat.entity.Notification;
 
-import com.example.GuardBatXat.dto.request.LocationCheckRequest;
-import com.example.GuardBatXat.dto.response.EvacuationResponse;
-import com.example.GuardBatXat.dto.response.LocationCheckResponse;
-import com.example.GuardBatXat.dto.response.SafeHavenProjection;
+import com.example.GuardBatXat.dto.request.rescue.LocationCheckRequest;
+import com.example.GuardBatXat.dto.response.commander.EvacuationResponse;
+import com.example.GuardBatXat.dto.response.rescue.LocationCheckResponse;
+import com.example.GuardBatXat.dto.response.rescue.SafeHavenProjection;
 import com.example.GuardBatXat.entity.Building;
 import com.example.GuardBatXat.entity.SystemState;
 import com.example.GuardBatXat.repository.BuildingRepository;
