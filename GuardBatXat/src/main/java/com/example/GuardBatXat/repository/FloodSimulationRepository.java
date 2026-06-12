@@ -28,6 +28,9 @@ public interface FloodSimulationRepository extends JpaRepository<FloodSimulation
 
     List<FloodSimulation> findBySimulationId(UUID simulationId);
 
+    @Query("SELECT DISTINCT f.inputLevel FROM FloodSimulation f ORDER BY f.inputLevel ASC")
+    List<Double> findAllSimulatedLevels();
+
     @Query("""
     SELECT new com.example.GuardBatXat.dto.response.FloodStatisticDto(
         f.riskStatus, 

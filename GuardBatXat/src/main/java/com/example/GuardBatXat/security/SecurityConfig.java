@@ -23,12 +23,13 @@
     import java.util.Arrays;
     import java.util.List;
     @Configuration
-//@EnableMethodSecurity
+    //@EnableMethodSecurity
     @RequiredArgsConstructor
     public class SecurityConfig {
 
         private final UserDetailsServiceImpl userDetailsService;
         private final JwtAuthFilter jwtAuthFilter;
+        private final RateLimitingFilter rateLimitingFilter;
 
         @Bean
         public PasswordEncoder passwordEncoder() {
@@ -77,10 +78,13 @@
                             //                        .requestMatchers("/api/v1/routing/**").permitAll()
                             //                        // 2. NHÓM PRIVATE
                             //                        .anyRequest().authenticated()
+//                                    .requestMatchers("/actuator/**").permitAll()
+//                                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                             .anyRequest().permitAll()
                     );
             http.authenticationProvider(authenticationProvider());
 //          http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
         }

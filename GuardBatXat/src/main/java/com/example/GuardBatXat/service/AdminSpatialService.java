@@ -5,6 +5,7 @@ import com.example.GuardBatXat.dto.request.RoadEdgeRequest;
 import com.example.GuardBatXat.dto.response.RoadEdgeListDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface AdminSpatialService {
     void addBuilding(BuildingRequest request);
@@ -12,4 +13,5 @@ public interface AdminSpatialService {
     void deleteBuilding(Long id);
     void addRoadEdge(RoadEdgeRequest request);
     List<RoadEdgeListDto> getAllRoadEdgesOptimized();
+    List<Map<String, Object>> getAllBuildings();
 }

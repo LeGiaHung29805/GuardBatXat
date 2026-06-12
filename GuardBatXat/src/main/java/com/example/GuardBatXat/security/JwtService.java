@@ -36,6 +36,12 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    public long getRemainingTimeInMinutes(String token) {
+        Date expiration = extractExpiration(token);
+        long diffInMillis = expiration.getTime() - System.currentTimeMillis();
+        return Math.max(0, diffInMillis / (1000 * 60));
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);

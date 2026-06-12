@@ -22,6 +22,8 @@ public class LocationCheckResponse {
     private Double aiFloodProb;
     // Thông tin tòa nhà người dùng đang đứng
     private String buildingType;
+    private Integer maxCapacity;
+    private Integer currentOccupancy;
     private Double distanceToWater;
     private Double currentElevation; // Cao độ hiện tại
 }

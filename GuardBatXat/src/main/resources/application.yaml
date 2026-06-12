@@ -23,3 +23,8 @@ batxat:
     jwt:
       secret: ${JWT_SECRET:DayLaMotKhoaBaoMatCucKyDaiVaPhucTapCuaHeThongCanhBaoThienTaiBatXat2024!@#}
       expiration: 86400000
+management:
+  endpoints:
+    web:
+      exposure:
+        include=mappings,health,info:

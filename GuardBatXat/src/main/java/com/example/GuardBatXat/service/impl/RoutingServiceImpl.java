@@ -26,16 +26,24 @@ public class RoutingServiceImpl implements RoutingService {
     private final String PYTHON_SHELTER_URL = "http://localhost:5000/api/v1/ai/find-safe-shelter";
     private final RoadNodeRepository roadNodeRepository;
     private final String PYTHON_ADMIN_COMPARE_URL = "http://localhost:5000/api/v1/ai/admin-routing";
+    private final com.example.GuardBatXat.websocket.NotificationSender notificationSender;
 
     @Override
     public Object getSafeRouteFromAI(RoutingRequest request) {
         RestTemplate restTemplate = new RestTemplate();
         try {
             log.info("Đang gọi AI Python tìm đường...");
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Đang khởi tạo thuật toán AI tìm đường đi an toàn...");
+            } catch (Exception e) {}
 
             // NHẬN VỀ Map.class ĐỂ TRÍCH XUẤT DỮ LIỆU LINH HOẠT
             ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_AI_URL, request, Map.class);
             Map<String, Object> body = response.getBody();
+
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "AI xử lý thành công, đang trả về kết quả định tuyến.");
+            } catch (Exception e) {}
 
             if (body != null && "success".equals(body.get("status"))) {
                 // 1. CHUYỂN ĐỔI TOẠ ĐỘ (Fix lỗi dòng 56)
@@ -109,8 +117,16 @@ public class RoutingServiceImpl implements RoutingService {
         RestTemplate restTemplate = new RestTemplate();
         try {
             log.info("Admin đang kiểm chứng 3 lộ trình từ {} đến {}", request.getStartLat(), request.getEndLat());
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Hệ thống AI đang phân tích và đối chiếu 3 chiến lược định tuyến. Quá trình này có thể mất vài giây...");
+            } catch (Exception e) {}
+
             ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_ADMIN_COMPARE_URL, request, Map.class);
             Map<String, Object> body = response.getBody();
+
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Đã hoàn tất phân tích đối chiếu 3 lộ trình.");
+            } catch (Exception e) {}
 
             if (body != null && "success".equals(body.get("status"))) {
                 Map<String, List<List<Double>>> rawData = (Map<String, List<List<Double>>>) body.get("data");

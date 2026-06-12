@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import com.example.GuardBatXat.websocket.NotificationSender;
 
 @Slf4j
 @Service
@@ -18,6 +19,7 @@ import java.util.Map;
 public class SafetyCheckServiceImpl implements SafetyCheckService {
 
     private final SafetyCheckRepository safetyCheckRepository;
+    private final NotificationSender notificationSender;
 
     @Override
     public LocationCheckResponse evaluateLocationSafety(LocationCheckRequest request) {
@@ -80,7 +82,7 @@ public class SafetyCheckServiceImpl implements SafetyCheckService {
                     (aiFloodProb > 0.6 && distToWater < 50.0 && floodDepth == 0 ? "AI dự báo nguy cơ lũ lụt hôm nay rất cao và nhà bạn ở gần nguồn nước." : "Hãy theo dõi sát sao tình hình và chuẩn bị phương án di dời.");
         }
 
-        return LocationCheckResponse.builder()
+        LocationCheckResponse response = LocationCheckResponse.builder()
                 .isSafe(isSafe)
                 .alertLevel(alertLevel)
                 .message(message)
@@ -90,8 +92,28 @@ public class SafetyCheckServiceImpl implements SafetyCheckService {
                 .aiLandslideProb(Math.round(aiLandslideProb * 100.0) / 100.0)
                 .aiFloodProb(Math.round(aiFloodProb * 100.0) / 100.0)
                 .buildingType((String) row.get("building_type"))
+                .maxCapacity(row.get("max_capacity") != null ? ((Number) row.get("max_capacity")).intValue() : 0)
+                .currentOccupancy(row.get("current_occupancy") != null ? ((Number) row.get("current_occupancy")).intValue() : 0)
                 .distanceToWater(distToWater)
                 .currentElevation(row.get("elevation_z") != null ? ((Number) row.get("elevation_z")).doubleValue() : 0.0)
                 .build();
+
+        // 5. Bắn thông báo thống kê Live Safety Check cho mọi trường hợp
+        try {
+            notificationSender.sendSystemNotification("/topic/safety-stats", response);
+        } catch (Exception e) {
+            log.error("Lỗi gửi thống kê an toàn qua WebSocket: {}", e.getMessage());
+        }
+
+        // 6. Bắn thông báo cảnh báo nguy hiểm lên màn hình trực ban
+        if (!isSafe && ("DANGER".equals(alertLevel) || "WARNING".equals(alertLevel))) {
+            try {
+                notificationSender.sendSystemNotification("/topic/safety-alerts", response);
+            } catch (Exception e) {
+                log.error("Lỗi gửi cảnh báo an toàn qua WebSocket: {}", e.getMessage());
+            }
+        }
+
+        return response;
     }
 }

@@ -30,6 +30,8 @@ public class SafetyCheckRepository {
         String sql = """
             SELECT 
                 b.building_type,
+                b.max_capacity,
+                b.estimated_pop as current_occupancy,
                 b.dist_to_water,
                 b.elevation_z,
                 

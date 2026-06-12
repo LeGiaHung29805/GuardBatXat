@@ -63,19 +63,7 @@ public class AdminSpatialController {
         try {
             response.put("code", 200);
             response.put("message", "Thành công");
-
-            List<Map<String, Object>> safeData = new ArrayList<>();
-            buildingRepository.findAll().forEach(b -> {
-                Map<String, Object> map = new HashMap<>();
-                map.put("id", b.getId());
-                // Chú ý: Backend trả về buildingType, areaInMeters (chuẩn CamelCase để Front-end hứng)
-                map.put("buildingType", b.getBuildingType());
-                map.put("areaInMeters", b.getAreaInMeters());
-                map.put("maxCapacity", b.getMaxCapacity());
-                safeData.add(map);
-            });
-
-            response.put("data", safeData);
+            response.put("data", spatialService.getAllBuildings());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("code", 500);
