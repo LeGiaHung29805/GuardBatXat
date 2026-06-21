@@ -90,7 +90,7 @@ public class CommanderAnalysisRepository {
             SELECT 
                 bx.name_3 AS ten_khu_vuc,
                 COUNT(b.id) AS so_nha_ngap,
-                COALESCE(SUM(b.estimated_pop), 0) AS so_nguoi
+                COALESCE(SUM(COALESCE(b.estimated_pop, b.max_capacity, 0)), 0) AS so_nguoi
             FROM batxat_buildings b
             JOIN batxatmoi bx ON ST_Intersects(ST_SetSRID(b.geom, 4326), ST_SetSRID(bx.geom, 4326))
             WHERE b.elevation_z < ?::numeric
@@ -108,7 +108,7 @@ public class CommanderAnalysisRepository {
             WITH building_stats AS (
                 SELECT bx.name_3 AS commune,
                        COUNT(b.id) AS so_nha_ngap,
-                       COALESCE(SUM(b.estimated_pop), 0) AS so_nguoi,
+                       COALESCE(SUM(COALESCE(b.estimated_pop, b.max_capacity, 0)), 0) AS so_nguoi,
                        COALESCE(SUM(b.area_in_meters), 0) AS dien_tich
                 FROM batxat_buildings b
                 JOIN batxatmoi bx ON ST_Intersects(ST_SetSRID(b.geom, 4326), ST_SetSRID(bx.geom, 4326))
