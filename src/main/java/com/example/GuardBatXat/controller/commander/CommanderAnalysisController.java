@@ -38,4 +38,15 @@ public class CommanderAnalysisController {
             @RequestParam(value = "level", defaultValue = "80") Double level) {
         return ResponseEntity.ok(analysisService.getTopAreas(level));
     }
+
+    @GetMapping("/commune-ranking")
+    public ResponseEntity<List<Map<String, Object>>> getCommuneRanking(
+            @RequestParam(value = "level", defaultValue = "80") Double level) {
+        return ResponseEntity.ok(analysisService.getCommuneRanking(level));
+    }
+
+    @GetMapping("/water-forecast")
+    public ResponseEntity<List<Map<String, Object>>> getWaterLevelForecast() {
+        return ResponseEntity.ok(analysisService.getWaterLevelForecast());
+    }
 }

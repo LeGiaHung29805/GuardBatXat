@@ -48,4 +48,14 @@ public class CommanderAnalysisServiceImpl implements CommanderAnalysisService {
     public List<Map<String, Object>> getTopAreas(Double level) {
         return analysisRepository.getTopAreas(level);
     }
+
+    @Override
+    public List<Map<String, Object>> getCommuneRanking(Double level) {
+        return analysisRepository.getCommuneRanking(level);
+    }
+
+    @Override
+    public List<Map<String, Object>> getWaterLevelForecast() {
+        return analysisRepository.getWaterLevelForecast();
+    }
 }
