@@ -123,7 +123,7 @@ public class RoutingServiceImpl implements RoutingService {
         try {
             log.info("Admin đang kiểm chứng 3 lộ trình từ {} đến {}", request.getStartLat(), request.getEndLat());
             ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_ADMIN_COMPARE_URL, request, Map.class);
-            Map<String, Object> body = response.getBody();
+            Map<String, Object> body = response.getBody(   );
 
             if (body != null && "success".equals(body.get("status"))) {
                 Map<String, List<List<Double>>> rawData = (Map<String, List<List<Double>>>) body.get("data");
