@@ -1,7 +1,21 @@
 version: '3.8'
 
 services:
-  #Trạm trung chuyển Redis
+  # 0. Database PostgreSQL (Mới thêm vào)
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: batxat_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: guard_bat_xat
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Lưu dữ liệu vĩnh viễn không bị mất khi tắt
+
+  # 1. Trạm trung chuyển Redis
   redis:
     image: redis:alpine
     container_name: batxat_redis
@@ -9,57 +23,65 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
-  # Backend Spring Boot (Nằm trong thư mục hiện tại/GuardBatXat)
+  # 2. Backend Spring Boot (Nằm trong BatXat/GuardBatXat)
   backend:
     build:
-      context: ./GuardBatXat
+      context: ./BatXat/GuardBatXat
       dockerfile: Dockerfile
     container_name: batxat_backend
     ports:
       - "8080:8080"
     depends_on:
       - redis
+      - postgres-db # Chờ DB khởi động xong mới chạy Spring Boot
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/guard_bat_xat
+      # ĐÃ SỬA: Chọc thẳng vào biến postgres-db thay vì host.docker.internal
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/guard_bat_xat
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=12345678
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
     restart: unless-stopped
 
-  # Module AI Inference - Chạy Bước 06 (Nằm ở thư mục anh em)
+  # 3. Module AI Inference
   python-ai:
     build:
-      context: ../GuardBaXat/Spatial-Intelligence
+      context: ./GuardBaXat/Spatial-Intelligence
       dockerfile: Dockerfile
     container_name: batxat_ai_engine
+    depends_on:
+      - postgres-db
     volumes:
-      - ../GuardBaXat/Spatial-Intelligence/data:/app/data
-      - ../GuardBaXat/Spatial-Intelligence/models:/app/models
+      - ./GuardBaXat/Spatial-Intelligence/data:/app/data
+      - ./GuardBaXat/Spatial-Intelligence/models:/app/models
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=postgres-db
       - DB_NAME=guard_bat_xat
       - DB_USER=postgres
       - DB_PASS=12345678
     command: python src/module2/06_inference.py
     restart: unless-stopped
 
-  # Module Data Fusion - Chạy Bước 04 liên tục (Nằm ở thư mục anh em)
+  # 4. Module Data Fusion
   python-worker:
     build:
-      context: ../GuardBaXat/Spatial-Intelligence
+      context: ./GuardBaXat/Spatial-Intelligence
+      dockerfile: Dockerfile
     container_name: batxat_data_fusion
+    depends_on:
+      - postgres-db # Chờ DB khởi động xong
     volumes:
-      - ../GuardBaXat/Spatial-Intelligence/data:/app/data
+      - ./GuardBaXat/Spatial-Intelligence/data:/app/data
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=postgres-db # ĐÃ SỬA: Chọc vào postgres-db
       - API_KEY_VC=97JQA9YSSKCDXW3HVV8CZDQB6
     command: python src/module1/04_data_fusion.py
     restart: always
-  #Giao diện WebGIS Next.js
+
+  # 5. Giao diện WebGIS Next.js (Nằm trong BatXat-Client)
   frontend:
     build:
-      context: ./batxat-client
+      context: ./BatXat-Client
       dockerfile: Dockerfile
     container_name: batxat_frontend
     ports:
@@ -67,8 +89,13 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./batxat-client:/app
+      - ./BatXat-Client:/app
       - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - INTERNAL_API_URL=http://backend:8080
     restart: unless-stopped
+
+# Khai báo volume tổng để bảo vệ dữ liệu Postgres
+volumes:
+  postgres_data:

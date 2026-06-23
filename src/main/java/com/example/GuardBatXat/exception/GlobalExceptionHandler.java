@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.exception;
 
-import com.example.GuardBatXat.dto.response.ApiResponse;
+import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -43,13 +43,12 @@ public class GlobalExceptionHandler {
 
     // 3. Bắt mọi lỗi hệ thống (Chống sập App)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex) {
+    public ResponseEntity<ApiResponse<String>> handleGlobalException(Exception ex) {
         logger.error("Lỗi hệ thống nghiêm trọng: ", ex);
-
-        ApiResponse<Void> response = new ApiResponse<>();
-        response.setCode(ErrorCode.SYSTEM_ERROR.getCode());
-        response.setMessage(ErrorCode.SYSTEM_ERROR.getMessage());
-
-        return ResponseEntity.internalServerError().body(response);
+        return ResponseEntity.internalServerError()
+                .body(ApiResponse.<String>builder()
+                        .code(500)
+                        .message("Lỗi: " + ex.getMessage() + " | " + ex.getClass().getName())
+                        .build());
     }
 }

@@ -18,6 +18,7 @@ public class SosEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User sender;
 
     @Column(name = "sender_phone", length = 15)
@@ -36,14 +37,17 @@ public class SosEntity {
     private Double gpsLng;
 
     @Column(columnDefinition = "geometry(Point, 4326)")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Point geom;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "building_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Building building;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User assignedUser;
 
     @Column(name = "sender_name", length = 100)

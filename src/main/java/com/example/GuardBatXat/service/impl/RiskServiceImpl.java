@@ -1,9 +1,11 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.entity.SafeHaven;
+import com.example.GuardBatXat.entity.Notification;
 
-import com.example.GuardBatXat.dto.request.LocationCheckRequest;
-import com.example.GuardBatXat.dto.response.EvacuationResponse;
-import com.example.GuardBatXat.dto.response.LocationCheckResponse;
-import com.example.GuardBatXat.dto.response.SafeHavenProjection;
+import com.example.GuardBatXat.dto.request.rescue.LocationCheckRequest;
+import com.example.GuardBatXat.dto.response.commander.EvacuationResponse;
+import com.example.GuardBatXat.dto.response.rescue.LocationCheckResponse;
+import com.example.GuardBatXat.dto.response.rescue.SafeHavenProjection;
 import com.example.GuardBatXat.entity.Building;
 import com.example.GuardBatXat.entity.SystemState;
 import com.example.GuardBatXat.repository.BuildingRepository;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.example.GuardBatXat.websocket.NotificationSender;
 
 @Slf4j
 @Service
@@ -28,6 +31,8 @@ public class RiskServiceImpl implements RiskService {
     private final SystemStateRepository systemStateRepository;
     private final RestTemplate restTemplate = new RestTemplate(); // Dùng để gọi API ngoài
     private final SafeHavenRepository safeHavenRepository;
+    private final NotificationSender notificationSender;
+
     @Override
     public LocationCheckResponse checkLocationSafety(LocationCheckRequest request) {
         Double lat = request.getLatitude();
@@ -98,7 +103,7 @@ public class RiskServiceImpl implements RiskService {
             message = "CẢNH BÁO: Rủi ro cao. Hãy chuẩn bị hành lý và theo dõi thông báo chính quyền.";
         }
 
-        return LocationCheckResponse.builder()
+        LocationCheckResponse response = LocationCheckResponse.builder()
                 .isSafe(isSafe)
                 .alertLevel(alertLevel)
                 .message(message)
@@ -110,6 +115,17 @@ public class RiskServiceImpl implements RiskService {
                 .distanceToWater(Math.round(distWater * 100.0) / 100.0)
                 .currentElevation(b.getElevationZ())
                 .build();
+
+        // Phát WebSocket nếu vị trí đang kiểm tra thuộc vùng nguy hiểm
+        if ("DANGER".equals(alertLevel) || "WARNING".equals(alertLevel)) {
+            try {
+                notificationSender.sendSystemNotification("/topic/safety-alerts", response);
+            } catch (Exception e) {
+                log.error("Lỗi khi bắn WebSocket Safety Alert: {}", e.getMessage());
+            }
+        }
+
+        return response;
     }
 
     /**

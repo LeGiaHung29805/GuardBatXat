@@ -1,7 +1,7 @@
 package com.example.GuardBatXat.mapper;
 
-import com.example.GuardBatXat.dto.request.UserCreationRequest;
-import com.example.GuardBatXat.dto.response.UserResponse;
+import com.example.GuardBatXat.dto.request.auth.UserCreationRequest;
+import com.example.GuardBatXat.dto.response.auth.UserResponse;
 import com.example.GuardBatXat.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

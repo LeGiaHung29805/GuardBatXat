@@ -1,9 +1,12 @@
 package com.example.GuardBatXat.service.impl;
+import com.example.GuardBatXat.websocket.NotificationSender;
+import com.example.GuardBatXat.entity.RoadNode;
+import com.example.GuardBatXat.entity.Notification;
 
-import com.example.GuardBatXat.dto.request.FindShelterRequest;
-import com.example.GuardBatXat.dto.request.RoutingRequest;
-import com.example.GuardBatXat.dto.response.RoutingCompareResponse;
-import com.example.GuardBatXat.dto.response.RoutingResponse;
+import com.example.GuardBatXat.dto.request.rescue.FindShelterRequest;
+import com.example.GuardBatXat.dto.request.rescue.RoutingRequest;
+import com.example.GuardBatXat.dto.response.rescue.RoutingCompareResponse;
+import com.example.GuardBatXat.dto.response.rescue.RoutingResponse;
 import com.example.GuardBatXat.repository.RoadNodeRepository;
 import com.example.GuardBatXat.service.RoutingService;
 import lombok.RequiredArgsConstructor;
@@ -22,20 +25,28 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
 
-    private final String PYTHON_AI_URL = "http://127.0.0.1:5000/api/v1/ai/safe-routing";
-    private final String PYTHON_SHELTER_URL = "http://127.0.0.1:5000/api/v1/ai/find-safe-shelter";
+    private final String PYTHON_AI_URL = "http://localhost:5000/api/v1/ai/safe-routing";
+    private final String PYTHON_SHELTER_URL = "http://localhost:5000/api/v1/ai/find-safe-shelter";
     private final RoadNodeRepository roadNodeRepository;
-    private final String PYTHON_ADMIN_COMPARE_URL = "http://127.0.0.1:5000/api/v1/ai/admin-routing";
+    private final String PYTHON_ADMIN_COMPARE_URL = "http://localhost:5000/api/v1/ai/admin-routing";
+    private final com.example.GuardBatXat.websocket.NotificationSender notificationSender;
 
     @Override
     public Object getSafeRouteFromAI(RoutingRequest request) {
         RestTemplate restTemplate = new RestTemplate();
         try {
             log.info("Đang gọi AI Python tìm đường...");
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Đang khởi tạo thuật toán AI tìm đường đi an toàn...");
+            } catch (Exception e) {}
 
             // NHẬN VỀ Map.class ĐỂ TRÍCH XUẤT DỮ LIỆU LINH HOẠT
             ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_AI_URL, request, Map.class);
             Map<String, Object> body = response.getBody();
+
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "AI xử lý thành công, đang trả về kết quả định tuyến.");
+            } catch (Exception e) {}
 
             if (body != null && "success".equals(body.get("status"))) {
                 // 1. CHUYỂN ĐỔI TOẠ ĐỘ (Fix lỗi dòng 56)
@@ -66,23 +77,10 @@ public class RoutingServiceImpl implements RoutingService {
                         .pathPoints(pathPoints)
                         .build();
             }
-            throw new com.example.GuardBatXat.exception.AppException(com.example.GuardBatXat.exception.ErrorCode.SYSTEM_ERROR, "AI không tìm được đường");
-        } catch (HttpStatusCodeException e) {
-            log.warn("AI báo lỗi khi tìm lộ trình: {}", e.getStatusCode());
-            String errorMessage = "Không rõ lý do";
-            try {
-                // Cố gắng parse JSON từ Python trả về (ví dụ: {"status":"error", "message":"Graph mạng lưới không được nạp..."})
-                Map<String, Object> errorBody = new com.fasterxml.jackson.databind.ObjectMapper().readValue(e.getResponseBodyAsString(), Map.class);
-                if (errorBody.containsKey("message")) {
-                    errorMessage = errorBody.get("message").toString();
-                }
-            } catch (Exception parseEx) {
-                errorMessage = e.getResponseBodyAsString();
-            }
-            throw new com.example.GuardBatXat.exception.AppException(com.example.GuardBatXat.exception.ErrorCode.SYSTEM_ERROR, "Cảnh báo AI: " + errorMessage);
+            throw new RuntimeException("AI không tìm được đường");
         } catch (Exception e) {
             log.error("Lỗi mạng khi kết nối với module AI Python: {}", e.getMessage());
-            throw new com.example.GuardBatXat.exception.AppException(com.example.GuardBatXat.exception.ErrorCode.SYSTEM_ERROR, "Hệ thống AI phân tích lộ trình đang bảo trì hoặc mất kết nối mạng!");
+            throw new RuntimeException("Hệ thống AI phân tích lộ trình đang bảo trì hoặc mất kết nối mạng!");
         }
     }
 
@@ -100,11 +98,11 @@ public class RoutingServiceImpl implements RoutingService {
 
         } catch (HttpStatusCodeException e) {
             log.warn("AI báo không tìm thấy điểm sơ tán hợp lệ. Mã lỗi: {}", e.getStatusCode());
-            throw new com.example.GuardBatXat.exception.AppException(com.example.GuardBatXat.exception.ErrorCode.SYSTEM_ERROR, "Cảnh báo AI: Không có điểm sơ tán nào khả dụng hoặc mọi ngả đường đều đã bị cô lập do thiên tai!");
+            throw new RuntimeException("Cảnh báo AI: Không có điểm sơ tán nào khả dụng hoặc mọi ngả đường đều đã bị cô lập do thiên tai!");
 
         } catch (Exception e) {
             log.error("Lỗi kết nối AI: {}", e.getMessage());
-            throw new com.example.GuardBatXat.exception.AppException(com.example.GuardBatXat.exception.ErrorCode.SYSTEM_ERROR, "Hệ thống AI tìm điểm sơ tán đang bảo trì hoặc mất kết nối mạng!");
+            throw new RuntimeException("Hệ thống AI tìm điểm sơ tán đang bảo trì hoặc mất kết nối mạng!");
         }
     }
     // ==========================================
@@ -122,8 +120,16 @@ public class RoutingServiceImpl implements RoutingService {
         RestTemplate restTemplate = new RestTemplate();
         try {
             log.info("Admin đang kiểm chứng 3 lộ trình từ {} đến {}", request.getStartLat(), request.getEndLat());
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Hệ thống AI đang phân tích và đối chiếu 3 chiến lược định tuyến. Quá trình này có thể mất vài giây...");
+            } catch (Exception e) {}
+
             ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_ADMIN_COMPARE_URL, request, Map.class);
             Map<String, Object> body = response.getBody(   );
+
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Đã hoàn tất phân tích đối chiếu 3 lộ trình.");
+            } catch (Exception e) {}
 
             if (body != null && "success".equals(body.get("status"))) {
                 Map<String, List<List<Double>>> rawData = (Map<String, List<List<Double>>>) body.get("data");
@@ -139,7 +145,7 @@ public class RoutingServiceImpl implements RoutingService {
         } catch (Exception e) {
             log.error("Lỗi Admin Routing: {}", e.getMessage());
             // ĐÚNG YÊU CẦU: TỚI ĐÂY LÀ CHẶN LUÔN, KHÔNG DÙNG MOCK DATA!
-            throw new com.example.GuardBatXat.exception.AppException(com.example.GuardBatXat.exception.ErrorCode.SYSTEM_ERROR, "Dữ liệu thực tế báo cáo khu vực này đang bị cô lập, không có tuyến đường an toàn.");
+            throw new RuntimeException("Dữ liệu thực tế báo cáo khu vực này đang bị cô lập, không có tuyến đường an toàn.");
         }
     }
 
