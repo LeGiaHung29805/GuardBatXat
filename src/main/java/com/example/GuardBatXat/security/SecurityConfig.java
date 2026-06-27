@@ -70,21 +70,28 @@
                     .cors(Customizer.withDefaults())
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(auth -> auth
-                            // 1. NHÓM PUBLIC
-                            //                        .requestMatchers("/api/v1/auth/**").permitAll()
-                            //                        .requestMatchers("/api/v1/map/**").permitAll()
-                            //                        .requestMatchers("/api/v1/safety/**").permitAll()
-                            //                        .requestMatchers("/api/v1/sos/send").permitAll()
-                            //                        .requestMatchers("/api/v1/routing/**").permitAll()
-                            //                        // 2. NHÓM PRIVATE
-                            //                        .anyRequest().authenticated()
-//                                    .requestMatchers("/actuator/**").permitAll()
-//                                    .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                            .anyRequest().permitAll()
-                    );
-            http.authenticationProvider(authenticationProvider());
-//          http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-            http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
+                            // PUBLIC endpoints (không cần token)
+                            .requestMatchers("/api/v1/auth/**").permitAll()
+                            .requestMatchers("/api/v1/map/**").permitAll()
+                            .requestMatchers("/api/v1/safety/**").permitAll()
+                            .requestMatchers("/api/v1/sos/send").permitAll()
+                            .requestMatchers("/api/v1/routing/**").permitAll()
+                            .requestMatchers("/actuator/**").permitAll()
+                            .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                            .requestMatchers("/ws-guardbatxat/**").permitAll()
+                            .requestMatchers("/ws/**").permitAll()
+
+                            // PRIVATE endpoints (cần token)
+                            .requestMatchers("/api/v1/users/**").authenticated()
+                            .requestMatchers("/api/v1/rescue/**").authenticated()
+                            .requestMatchers("/api/v1/commander/**").authenticated()
+                            // Tất cả request khác cần authenticated
+                            .anyRequest().authenticated()
+                    )
+                    .authenticationProvider(authenticationProvider())
+                    .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)  // BẬT LẠI
+                    .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
         }

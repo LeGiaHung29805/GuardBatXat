@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@RestController("rescueSosControllerV1")
 @RequestMapping("/api/v1/rescue/sos")
 @RequiredArgsConstructor
 public class RescueSosController {
