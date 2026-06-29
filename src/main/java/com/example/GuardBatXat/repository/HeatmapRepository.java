@@ -23,17 +23,16 @@ public interface HeatmapRepository extends JpaRepository<Building, Long> {
             "ST_X(ST_Centroid(geom)) as lng, " +
             "LEAST(flood_depth / 2.0, 1.0) as weight, " +
             "risk_status as severity " +
-            "FROM simulate_flood_risk((SELECT active_flood_level FROM batxat_system_state ORDER BY updated_at DESC LIMIT 1)) " +
+            "FROM simulate_flood_risk(CAST((SELECT active_flood_level FROM batxat_system_state ORDER BY updated_at DESC LIMIT 1) AS numeric)) " +
             "WHERE flood_depth > 0",
             nativeQuery = true)
     List<HeatmapProjection> getLandslideHeatmap();
 
-    //Lấy dữ liệu Ngập Lụt theo kịch bản Mực nước
     @Query(value = "SELECT ST_Y(ST_Centroid(geom)) as lat, " +
             "ST_X(ST_Centroid(geom)) as lng, " +
             "LEAST(flood_depth / 2.0, 1.0) as weight, " +
             "risk_status as severity " +
-            "FROM simulate_flood_risk(:waterLevel) " +
+            "FROM simulate_flood_risk(CAST(:waterLevel AS numeric)) " +
             "WHERE flood_depth > 0",
             nativeQuery = true)
     List<HeatmapProjection> getFloodHeatmap(@Param("waterLevel") Double waterLevel);
