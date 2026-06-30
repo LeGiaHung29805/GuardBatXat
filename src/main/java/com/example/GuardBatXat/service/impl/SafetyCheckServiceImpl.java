@@ -29,8 +29,13 @@ public class SafetyCheckServiceImpl implements SafetyCheckService {
         }
 
         // 1. Gọi Database thông qua Repository
-        Double floodLevelDouble = safetyCheckRepository.getCurrentSystemFloodLevel();
-        BigDecimal currentFloodLevel = BigDecimal.valueOf(floodLevelDouble);
+        BigDecimal currentFloodLevel;
+        if (request.getWaterLevel() != null) {
+            currentFloodLevel = BigDecimal.valueOf(request.getWaterLevel());
+        } else {
+            Double floodLevelDouble = safetyCheckRepository.getCurrentSystemFloodLevel();
+            currentFloodLevel = BigDecimal.valueOf(floodLevelDouble);
+        }
 
         List<Map<String, Object>> results = safetyCheckRepository.findSafetyDataByLocation(
                 request.getLatitude(), request.getLongitude(), currentFloodLevel);
@@ -116,5 +121,104 @@ public class SafetyCheckServiceImpl implements SafetyCheckService {
         }
 
         return response;
+    }
+
+    @Override
+    public com.example.GuardBatXat.dto.response.rescue.NeighborhoodSafetyResponse evaluateNeighborhoodSafety(LocationCheckRequest request) {
+        try {
+            if (request.getLatitude() == null || request.getLongitude() == null) {
+                throw new IllegalArgumentException("Hệ thống cần tọa độ GPS để định vị.");
+            }
+
+            BigDecimal currentFloodLevel;
+            if (request.getWaterLevel() != null) {
+                currentFloodLevel = BigDecimal.valueOf(request.getWaterLevel());
+            } else {
+                Double floodLevelDouble = safetyCheckRepository.getCurrentSystemFloodLevel();
+                currentFloodLevel = BigDecimal.valueOf(floodLevelDouble);
+            }
+
+            // Bán kính ~500m là 0.005 độ trong EPSG:4326
+            List<Map<String, Object>> rows = safetyCheckRepository.findNeighborhoodSafetyData(
+                    request.getLatitude(), request.getLongitude(), currentFloodLevel, 0.005);
+
+            List<com.example.GuardBatXat.dto.response.rescue.NeighborhoodSafetyResponse.NeighborhoodBuildingDto> buildings = new java.util.ArrayList<>();
+            int safeCount = 0;
+            int warningCount = 0;
+            int dangerCount = 0;
+            double sumElevation = 0.0;
+            double maxFlood = 0.0;
+
+            for (Map<String, Object> row : rows) {
+                Long id = ((Number) row.get("id")).longValue();
+                String buildingType = (String) row.get("building_type");
+                double elevationZ = row.get("elevation_z") != null ? ((Number) row.get("elevation_z")).doubleValue() : 0.0;
+                String geomWkt = (String) row.get("geom_wkt");
+                double floodDepth = ((Number) row.get("flood_depth")).doubleValue();
+                String floodStatus = (String) row.get("flood_status");
+                double aiLandslideProb = ((Number) row.get("ai_landslide_prob")).doubleValue();
+                String landslideStatus = (String) row.get("landslide_status");
+                double aiFloodProb = ((Number) row.get("ai_flood_prob")).doubleValue();
+                double distToWater = row.get("dist_to_water") != null ? ((Number) row.get("dist_to_water")).doubleValue() : -1.0;
+
+                boolean isDanger = floodStatus.contains("Nguy cơ Rất cao") ||
+                        floodStatus.contains("Nguy cơ Cao") ||
+                        "Rất Cao (Nguy cấp)".equals(landslideStatus) ||
+                        "Cao".equals(landslideStatus);
+
+                boolean isWarning = floodDepth > 0 ||
+                        "Trung Bình".equals(landslideStatus) ||
+                        floodStatus.contains("Nguy cơ Vừa") ||
+                        (aiFloodProb > 0.6 && distToWater > 0 && distToWater < 50.0);
+
+                String alertLevel = "SAFE";
+                boolean isSafe = true;
+
+                if (isDanger) {
+                    alertLevel = "DANGER";
+                    isSafe = false;
+                    dangerCount++;
+                } else if (isWarning) {
+                    alertLevel = "WARNING";
+                    isSafe = false;
+                    warningCount++;
+                } else {
+                    safeCount++;
+                }
+
+                sumElevation += elevationZ;
+                if (floodDepth > maxFlood) {
+                    maxFlood = floodDepth;
+                }
+
+                buildings.add(com.example.GuardBatXat.dto.response.rescue.NeighborhoodSafetyResponse.NeighborhoodBuildingDto.builder()
+                        .id(id)
+                        .buildingType(buildingType)
+                        .elevationZ(elevationZ)
+                        .geomWkt(geomWkt)
+                        .floodDepth(Math.round(floodDepth * 100.0) / 100.0)
+                        .floodStatus(floodStatus)
+                        .aiLandslideProb(Math.round(aiLandslideProb * 100.0) / 100.0)
+                        .landslideStatus(landslideStatus)
+                        .alertLevel(alertLevel)
+                        .isSafe(isSafe)
+                        .build());
+            }
+
+            double avgElevation = rows.isEmpty() ? 0.0 : sumElevation / rows.size();
+
+            return com.example.GuardBatXat.dto.response.rescue.NeighborhoodSafetyResponse.builder()
+                    .totalBuildings(rows.size())
+                    .safeBuildings(safeCount)
+                    .warningBuildings(warningCount)
+                    .dangerBuildings(dangerCount)
+                    .averageElevation(Math.round(avgElevation * 100.0) / 100.0)
+                    .maxFloodDepth(Math.round(maxFlood * 100.0) / 100.0)
+                    .buildings(buildings)
+                    .build();
+        } catch (Exception e) {
+            log.error("LỖI CHI TIẾT TRONG evaluateNeighborhoodSafety: ", e);
+            throw new RuntimeException("Lỗi hệ thống khi phân tích vùng lân cận: " + e.getMessage(), e);
+        }
     }
 }

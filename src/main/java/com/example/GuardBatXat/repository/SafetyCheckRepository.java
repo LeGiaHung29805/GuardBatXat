@@ -67,4 +67,38 @@ public class SafetyCheckRepository {
         // Lưu ý: PostGIS nhận tham số theo thứ tự Kinh độ (lng) trước, Vĩ độ (lat) sau
         return jdbcTemplate.queryForList(sql, lng, lat, currentFloodLevel);
     }
+
+    public List<Map<String, Object>> findNeighborhoodSafetyData(Double lat, Double lng, BigDecimal currentFloodLevel, Double radius) {
+        String sql = """
+            SELECT 
+                b.id,
+                b.building_type,
+                b.max_capacity,
+                b.estimated_pop as current_occupancy,
+                b.dist_to_water,
+                b.elevation_z,
+                ST_AsText(b.geom) as geom_wkt,
+                
+                -- 1. DỮ LIỆU NGẬP LỤT CHI TIẾT
+                COALESCE(sim.flood_depth, 0.0) AS flood_depth,
+                COALESCE(sim.risk_status, 'An toàn') AS flood_status,
+                
+                -- 2. DỮ LIỆU SẠT LỞ CHI TIẾT
+                COALESCE(ls.ai_prob, 0.0) AS ai_landslide_prob,
+                COALESCE(ls.risk_severity, 'Thấp (An toàn)') AS landslide_status,
+                
+                -- 3. BỐI CẢNH LŨ LỤT TỔNG QUAN
+                COALESCE(dr.flood_risk_pct / 100.0, 0.0) AS ai_flood_prob
+                
+            FROM batxat_buildings b
+            CROSS JOIN (SELECT ST_SetSRID(ST_MakePoint(?, ?), 4326) AS geom) AS user_loc
+            LEFT JOIN batxat_daily_risk dr ON dr.forecast_date = CURRENT_DATE
+            LEFT JOIN LATERAL simulate_flood_risk(?) sim ON sim.building_id = b.id
+            LEFT JOIN LATERAL get_combined_landslide_risk() ls ON ls.building_id = b.id
+            WHERE ST_DWithin(user_loc.geom, b.geom, ?)
+            ORDER BY ST_Distance(user_loc.geom, b.geom) ASC
+            LIMIT 150
+        """;
+        return jdbcTemplate.queryForList(sql, lng, lat, currentFloodLevel, radius);
+    }
 }

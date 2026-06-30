@@ -13,4 +13,5 @@ public class LocationCheckRequest {
     private Double latitude;
     private Double longitude;
     private String address;
+    private Double waterLevel;
 }

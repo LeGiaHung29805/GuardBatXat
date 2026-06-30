@@ -5,6 +5,7 @@ import com.example.GuardBatXat.dto.request.commander.NotificationSendRequest;
 import com.example.GuardBatXat.dto.response.commander.CommanderFloodProjection;
 import com.example.GuardBatXat.dto.response.commander.NotificationResponse;
 import com.example.GuardBatXat.entity.Notification;
+import com.example.GuardBatXat.entity.User;
 import com.example.GuardBatXat.repository.NotificationRepository;
 import com.example.GuardBatXat.service.CommanderDashboardService;
 import com.example.GuardBatXat.service.NotificationService;
@@ -106,6 +107,32 @@ public class NotificationServiceImpl implements NotificationService {
                     .title(n.getTitle() != null ? n.getTitle() : "Thông báo")
                     .content(n.getContent())
                     .time(time)
+                    .isPersonal(n.getTargetUser() != null)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<NotificationResponse> getNotificationHistoryForCitizen(User user) {
+        List<Notification> realNotifications;
+        if (user == null) {
+            realNotifications = notificationRepository.findTop20GeneralNotifications();
+        } else {
+            realNotifications = notificationRepository.findTop20ForUserOrderByCreatedAtDesc(user);
+        }
+
+        return realNotifications.stream().map(n -> {
+            String time = n.getCreatedAt() != null 
+                ? n.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+            return NotificationResponse.builder()
+                    .notifyId(n.getNotifyId() != null ? n.getNotifyId().longValue() : null)
+                    .targetArea(n.getAlertLevel() != null ? n.getAlertLevel() : "Huyện Bát Xát")
+                    .title(n.getTitle() != null ? n.getTitle() : "Thông báo")
+                    .content(n.getContent())
+                    .time(time)
+                    .isPersonal(n.getTargetUser() != null)
                     .build();
         }).collect(Collectors.toList());
     }

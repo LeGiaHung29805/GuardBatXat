@@ -16,4 +16,5 @@ public class NotificationResponse {
     private String title;
     private String content;
     private String time;
+    private Boolean isPersonal;
 }

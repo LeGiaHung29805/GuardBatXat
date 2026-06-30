@@ -15,6 +15,7 @@ import com.example.GuardBatXat.repository.SosRequestRepository;
 import com.example.GuardBatXat.repository.UserRepository;
 import com.example.GuardBatXat.service.SosService;
 import com.example.GuardBatXat.websocket.NotificationSender;
+import com.example.GuardBatXat.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -33,6 +34,7 @@ public class SosServiceImpl implements SosService {
     private final UserRepository userRepository;
     private final com.example.GuardBatXat.repository.SosUpdateLogRepository sosUpdateLogRepository;
     private final NotificationSender notificationSender;
+    private final NotificationRepository notificationRepository;
 
     @Override
     @Transactional
@@ -100,6 +102,28 @@ public class SosServiceImpl implements SosService {
         sos.setStatus("RESCUING");
         sos.setAssignedUser(user);
         sosRequestRepository.save(sos);
+
+        // Lưu thông báo cứu hộ cá nhân tới người gửi SOS
+        if (sos.getSender() != null) {
+            Notification notification = new Notification();
+            notification.setTitle("Đội cứu hộ đang di chuyển");
+            notification.setContent("Đội cứu hộ (" + user.getFullName() + ") đã tiếp nhận yêu cầu SOS của bạn và đang di chuyển tới vị trí của bạn.");
+            notification.setAlertLevel("Cứu hộ");
+            notification.setTargetUser(sos.getSender());
+            notificationRepository.save(notification);
+
+            // Gửi WebSocket thông báo riêng tư đến user này
+            try {
+                java.util.Map<String, Object> wsPayload = new java.util.HashMap<>();
+                wsPayload.put("type", "MANUAL_ALERT");
+                wsPayload.put("title", notification.getTitle());
+                wsPayload.put("content", notification.getContent());
+                wsPayload.put("targetUser", sos.getSender().getUserId());
+                notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
+            } catch (Exception e) {
+                log.error("Lỗi gửi WS cảnh báo cứu hộ: " + e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -164,7 +188,7 @@ public class SosServiceImpl implements SosService {
             imagesJoined = String.join(",,,", request.getImages());
         }
 
-        com.example.GuardBatXat.entity.SosUpdateLog log = com.example.GuardBatXat.entity.SosUpdateLog.builder()
+        com.example.GuardBatXat.entity.SosUpdateLog logUpdate = com.example.GuardBatXat.entity.SosUpdateLog.builder()
                 .sosRequest(sos)
                 .updateStatus(request.getStatus())
                 .message(request.getMessage())
@@ -173,6 +197,28 @@ public class SosServiceImpl implements SosService {
                 .images(imagesJoined)
                 .build();
 
-        sosUpdateLogRepository.save(log);
+        sosUpdateLogRepository.save(logUpdate);
+
+        // Lưu thông báo cứu hộ cá nhân tới người gửi SOS khi có cập nhật mới
+        if (sos.getSender() != null) {
+            Notification notification = new Notification();
+            notification.setTitle("Cập nhật cứu hộ");
+            notification.setContent("Đội cứu hộ cập nhật trạng thái: " + request.getMessage());
+            notification.setAlertLevel("Cứu hộ");
+            notification.setTargetUser(sos.getSender());
+            notificationRepository.save(notification);
+
+            // Gửi WebSocket thông báo riêng tư đến user này
+            try {
+                java.util.Map<String, Object> wsPayload = new java.util.HashMap<>();
+                wsPayload.put("type", "MANUAL_ALERT");
+                wsPayload.put("title", notification.getTitle());
+                wsPayload.put("content", notification.getContent());
+                wsPayload.put("targetUser", sos.getSender().getUserId());
+                notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
+            } catch (Exception e) {
+                log.error("Lỗi gửi WS cảnh báo cứu hộ: " + e.getMessage());
+            }
+        }
     }
 }
