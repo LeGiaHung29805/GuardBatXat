@@ -125,7 +125,7 @@ public class RoutingServiceImpl implements RoutingService {
             } catch (Exception e) {}
 
             ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_ADMIN_COMPARE_URL, request, Map.class);
-            Map<String, Object> body = response.getBody();
+            Map<String, Object> body = response.getBody(   );
 
             try {
                 notificationSender.sendSystemNotification("/topic/task-progress", "Đã hoàn tất phân tích đối chiếu 3 lộ trình.");

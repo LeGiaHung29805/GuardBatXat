@@ -53,6 +53,16 @@ public class CommanderSystemController {
                 .build());
     }
 
+    @GetMapping("/evacuation/center")
+    public ResponseEntity<ApiResponse<Map<String, Double>>> getEvacuationCenter(
+            @RequestParam(value = "level", defaultValue = "80") String level) {
+        return ResponseEntity.ok(ApiResponse.<Map<String, Double>>builder()
+                .code(200)
+                .message("Lấy tâm vùng sơ tán thành công")
+                .data(notificationService.getEvacuationCenter(level))
+                .build());
+    }
+
     @PostMapping("/notifications/send")
     public ResponseEntity<ApiResponse<Map<String, String>>> sendNotification(@RequestBody NotificationSendRequest payload) {
         notificationService.sendNotification(payload);

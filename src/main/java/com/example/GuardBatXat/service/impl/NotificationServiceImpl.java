@@ -39,14 +39,33 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setAlertLevel("Kịch bản " + level);
         notificationRepository.save(notification);
 
-        // 2. Tính toán tọa độ tâm của vùng ngập
+        // 2. Tính toán tọa độ tâm của vùng ngập (dùng chung 1 hàm để client preview khớp 100%)
+        Map<String, Double> center = getEvacuationCenter(level);
+
+        // 3. Gửi thông báo Real-time qua WebSocket
+        Map<String, Object> wsPayload = new HashMap<>();
+        wsPayload.put("type", "MANUAL_ALERT");
+        wsPayload.put("title", notification.getTitle());
+        wsPayload.put("content", notification.getContent());
+        wsPayload.put("level", level);
+        wsPayload.put("targetArea", "Toàn Vùng");
+        wsPayload.put("centerLat", center.get("centerLat"));
+        wsPayload.put("centerLng", center.get("centerLng"));
+        wsPayload.put("radius", radius);
+
+        notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
+    }
+
+    @Override
+    public Map<String, Double> getEvacuationCenter(String level) {
+        // Tâm mặc định của Bát Xát (khi không có điểm ngập nào)
+        double centerLat = 22.6133;
+        double centerLng = 103.8647;
+
         Double numLevel = Double.valueOf(level);
         List<CommanderFloodProjection> floodedBuildings = commanderDashboardService.getCommanderFloodHeatmap(numLevel);
 
-        double centerLat = 22.6133; // Tâm mặc định của Bát Xát
-        double centerLng = 103.8647;
-
-        if (!floodedBuildings.isEmpty()) {
+        if (floodedBuildings != null && !floodedBuildings.isEmpty()) {
             double sumLat = 0;
             double sumLng = 0;
             for (CommanderFloodProjection f : floodedBuildings) {
@@ -57,18 +76,10 @@ public class NotificationServiceImpl implements NotificationService {
             centerLng = sumLng / floodedBuildings.size();
         }
 
-        // 3. Gửi thông báo Real-time qua WebSocket
-        Map<String, Object> wsPayload = new HashMap<>();
-        wsPayload.put("type", "MANUAL_ALERT");
-        wsPayload.put("title", notification.getTitle());
-        wsPayload.put("content", notification.getContent());
-        wsPayload.put("level", level);
-        wsPayload.put("targetArea", "Toàn Vùng");
-        wsPayload.put("centerLat", centerLat);
-        wsPayload.put("centerLng", centerLng);
-        wsPayload.put("radius", radius);
-
-        notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
+        Map<String, Double> center = new HashMap<>();
+        center.put("centerLat", centerLat);
+        center.put("centerLng", centerLng);
+        return center;
     }
 
     @Override

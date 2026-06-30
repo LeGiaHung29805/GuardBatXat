@@ -90,7 +90,7 @@ public class CommanderAnalysisRepository {
             SELECT 
                 bx.name_3 AS ten_khu_vuc,
                 COUNT(b.id) AS so_nha_ngap,
-                COALESCE(SUM(b.estimated_pop), 0) AS so_nguoi
+                COALESCE(SUM(COALESCE(b.estimated_pop, b.max_capacity, 0)), 0) AS so_nguoi
             FROM batxat_buildings b
             JOIN batxatmoi bx ON ST_Intersects(ST_SetSRID(b.geom, 4326), ST_SetSRID(bx.geom, 4326))
             WHERE b.elevation_z < ?::numeric
@@ -99,5 +99,62 @@ public class CommanderAnalysisRepository {
             LIMIT 5
             """;
         return jdbcTemplate.queryForList(sql, level);
+    }
+
+    // 5. Xếp hạng TẤT CẢ các xã cũ của Bát Xát theo nhiều tiêu chí
+    //    (Nhà ngập, Số người, Diện tích ngập, Đường bị chặn)
+    public List<Map<String, Object>> getCommuneRanking(Double level) {
+        String sql = """
+            WITH building_stats AS (
+                SELECT bx.name_3 AS commune,
+                       COUNT(b.id) AS so_nha_ngap,
+                       COALESCE(SUM(COALESCE(b.estimated_pop, b.max_capacity, 0)), 0) AS so_nguoi,
+                       COALESCE(SUM(b.area_in_meters), 0) AS dien_tich
+                FROM batxat_buildings b
+                JOIN batxatmoi bx ON ST_Intersects(ST_SetSRID(b.geom, 4326), ST_SetSRID(bx.geom, 4326))
+                WHERE b.elevation_z < ?::numeric
+                GROUP BY bx.name_3
+            ),
+            road_stats AS (
+                SELECT bx.name_3 AS commune,
+                       COUNT(*) AS so_duong_chan
+                FROM batxat_road_edges e
+                JOIN batxatmoi bx ON ST_Intersects(e.geometry, ST_SetSRID(bx.geom, 4326))
+                LEFT JOIN batxat_daily_road_risk r 
+                       ON e.u = r.u_node AND e.v = r.v_node AND e.key = r.key 
+                      AND r.forecast_date = CURRENT_DATE
+                WHERE (e.avg_elevation > 0 AND e.avg_elevation <= ?::numeric) 
+                   OR r.landslide_prob > 0
+                GROUP BY bx.name_3
+            )
+            SELECT COALESCE(b.commune, r.commune) AS ten_khu_vuc,
+                   COALESCE(b.so_nha_ngap, 0) AS so_nha_ngap,
+                   COALESCE(b.so_nguoi, 0) AS so_nguoi,
+                   ROUND(COALESCE(b.dien_tich, 0))::int AS dien_tich,
+                   COALESCE(r.so_duong_chan, 0) AS so_duong_chan
+            FROM building_stats b
+            FULL OUTER JOIN road_stats r ON b.commune = r.commune
+            WHERE COALESCE(b.commune, r.commune) IS NOT NULL
+            ORDER BY so_nha_ngap DESC, so_duong_chan DESC
+            """;
+        return jdbcTemplate.queryForList(sql, level, level);
+    }
+
+    // 6. Dự báo diễn biến Mực nước & Lượng mưa lưu vực (14 mốc thời gian gần nhất)
+    public List<Map<String, Object>> getWaterLevelForecast() {
+        String sql = """
+            SELECT ngay, luong_mua, muc_nuoc
+            FROM (
+                SELECT record_date,
+                       TO_CHAR(record_date, 'DD/MM') AS ngay,
+                       COALESCE(basin_precip, 0) AS luong_mua,
+                       COALESCE(estimated_water_level, 0) AS muc_nuoc
+                FROM batxat_basin_hydrology
+                ORDER BY record_date DESC
+                LIMIT 14
+            ) t
+            ORDER BY t.record_date ASC
+            """;
+        return jdbcTemplate.queryForList(sql);
     }
 }
