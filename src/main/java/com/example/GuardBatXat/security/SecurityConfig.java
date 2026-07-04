@@ -23,7 +23,7 @@
     import java.util.Arrays;
     import java.util.List;
     @Configuration
-    //@EnableMethodSecurity
+    @EnableMethodSecurity
     @RequiredArgsConstructor
     public class SecurityConfig {
 

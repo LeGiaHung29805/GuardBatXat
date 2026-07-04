@@ -6,10 +6,12 @@ import com.example.GuardBatXat.dto.response.rescue.RoutingCompareResponse;
 import com.example.GuardBatXat.service.RoutingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/routing")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminRoutingController {
 
