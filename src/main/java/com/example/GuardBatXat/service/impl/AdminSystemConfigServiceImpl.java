@@ -80,6 +80,13 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         return mapToModelResponse(savedModel);
     }
 
+        @Override
+    public AhpWeightResponse getAhpWeights(String strategyName) {
+        AhpWeight weight = ahpWeightRepository.findById(strategyName)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chiến lược: " + strategyName));
+        return mapToWeightResponse(weight);
+    }
+
     @Override
     @Transactional
     public AhpWeightResponse updateAhpWeights(String strategyName, AhpWeightRequest request) {

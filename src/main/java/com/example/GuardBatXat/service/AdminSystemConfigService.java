@@ -11,5 +11,6 @@ import java.util.List;
 public interface AdminSystemConfigService {
     List<ModelRegistryResponse> getAllModels();
     ModelRegistryResponse activateModel(Integer modelId);
+    AhpWeightResponse getAhpWeights(String strategyName);
     AhpWeightResponse updateAhpWeights(String strategyName, AhpWeightRequest request);
 }
