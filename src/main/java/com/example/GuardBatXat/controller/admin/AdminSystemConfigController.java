@@ -44,6 +44,16 @@ public class AdminSystemConfigController {
                 .build());
     }
 
+        // Lấy trọng số AHP theo kịch bản
+    @GetMapping("/weights/{strategyName}")
+    public ResponseEntity<ApiResponse<AhpWeightResponse>> getWeights(@PathVariable String strategyName) {
+        return ResponseEntity.ok(ApiResponse.<AhpWeightResponse>builder()
+                .code(200)
+                .message("Lấy trọng số AHP thành công")
+                .data(systemService.getAhpWeights(strategyName))
+                .build());
+    }
+
     // Cập nhật trọng số AHP cho kịch bản (ví dụ: "safety" hoặc "rescue")
     @PutMapping("/weights/{strategyName}")
     public ResponseEntity<ApiResponse<AhpWeightResponse>> updateWeights(
