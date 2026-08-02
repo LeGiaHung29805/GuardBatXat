@@ -23,4 +23,6 @@ public class LiveLocationRequest {
     private Double lng;
 
     private String role; // Ví dụ: "VICTIM" hoặc "RESCUE_TEAM"
+    private Double remainingKm;
+    private String message;
 }

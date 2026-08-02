@@ -81,9 +81,27 @@ public class IncidentReportServiceImpl implements IncidentReportService {
 
         // Nếu được duyệt và trước đó chưa được duyệt, cập nhật cản trở đường bộ
         if ("APPROVED".equalsIgnoreCase(status) && !"APPROVED".equalsIgnoreCase(oldStatus)) {
-            log.info("Báo cáo được DUYỆT. Tăng community_report cho đoạn đường lân cận [{}, {}]", report.getGpsLat(), report.getGpsLng());
+            int amount = 1;
+            String impact = report.getImpactLevel() != null ? report.getImpactLevel().toUpperCase() : "LOW";
+            switch (impact) {
+                case "CRITICAL":
+                    amount = 5;
+                    break;
+                case "HIGH":
+                    amount = 3;
+                    break;
+                case "MEDIUM":
+                    amount = 2;
+                    break;
+                case "LOW":
+                default:
+                    amount = 1;
+                    break;
+            }
+            log.info("Báo cáo được DUYỆT (Mức độ: {}, Trọng số phạt: +{}). Tăng community_report cho đoạn đường lân cận [{}, {}]", 
+                    impact, amount, report.getGpsLat(), report.getGpsLng());
             // 0.0002 độ tương đương khoảng 20-25m trong thực tế
-            roadEdgeRepository.incrementCommunityReportNear(report.getGpsLat(), report.getGpsLng(), 0.0002);
+            roadEdgeRepository.incrementCommunityReportNear(report.getGpsLat(), report.getGpsLng(), 0.0002, amount);
         }
 
         return mapToResponse(updated);

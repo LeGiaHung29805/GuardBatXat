@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.GuardBatXat.dto.request.auth.UserUpdateRequest;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
+import com.example.GuardBatXat.exception.AppException;
+import com.example.GuardBatXat.exception.ErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -138,16 +140,22 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Cacheable(value = "userProfile", key = "#identifier")
     public UserResponse getMyProfile(String identifier) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         User user = userRepository.findByIdentifier(identifier)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy dữ liệu người dùng!"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return userMapper.toUserResponse(user);
     }
     @Override
     @Transactional
     @Cacheable(value = "survivalProfile", key = "#identifier")
     public UserProfileResponse getMySurvivalProfile(String identifier) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         User user = userRepository.findByIdentifier(identifier)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return userProfileMapper.toResponse(user.getUserProfile());
     }
 
@@ -155,8 +163,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @CacheEvict(value = {"userProfile", "survivalProfile", "users"}, allEntries = true)
     public UserProfileResponse updateMySurvivalProfile(String identifier, UserProfileRequest request) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         User user = userRepository.findByIdentifier(identifier)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         // 1. CẬP NHẬT THÔNG TIN CƠ BẢN (Bảng batxat_users)
         if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {

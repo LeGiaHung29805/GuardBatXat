@@ -11,7 +11,7 @@ import com.example.GuardBatXat.dto.response.rescue.SosResponse;
 import java.util.List;
 
 public interface SosService {
-    void processSosRequest(SosRequest requestDto);
+    Integer processSosRequest(SosRequest requestDto, String identifier);
     void updateLiveLocation(com.example.GuardBatXat.dto.request.rescue.LiveLocationRequest request);
     void sendEmergencyChat(com.example.GuardBatXat.dto.request.rescue.ChatRequest request);
     List<SosResponse> getAllSosRequests();

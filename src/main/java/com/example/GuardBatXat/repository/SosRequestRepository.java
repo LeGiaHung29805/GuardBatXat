@@ -14,7 +14,6 @@ public interface SosRequestRepository extends JpaRepository<SosEntity, Integer> 
 
     List<SosEntity> findByStatus(String status);
 
-    @Modifying
     @Query(value = """
         INSERT INTO batxat_sos_requests (
             sender_phone, message, gps_lat, gps_lng, geom, status,
@@ -26,8 +25,9 @@ public interface SosRequestRepository extends JpaRepository<SosEntity, Integer> 
             'OPEN',
             :senderName, :totalPeople, :elderlyCount, :childrenCount, :senderId
         )
+        RETURNING id
     """, nativeQuery = true)
-    void insertSosRequestNative(
+    Integer insertSosRequestNative(
             @Param("phone") String phone,
             @Param("message") String message,
             @Param("lat") Double lat,

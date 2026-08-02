@@ -29,12 +29,13 @@ public interface RoadEdgeRepository extends JpaRepository<RoadEdge, RoadEdgeId> 
     @Modifying
     @Query(value = """
         UPDATE batxat_road_edges 
-        SET community_report = COALESCE(community_report, 0) + 1
+        SET community_report = LEAST(COALESCE(community_report, 0) + :amount, 5)
         WHERE ST_DWithin(geom, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326), :distanceDegree)
         """, nativeQuery = true)
     void incrementCommunityReportNear(
             @Param("lat") Double lat, 
             @Param("lng") Double lng, 
-            @Param("distanceDegree") Double distanceDegree
+            @Param("distanceDegree") Double distanceDegree,
+            @Param("amount") Integer amount
     );
 }

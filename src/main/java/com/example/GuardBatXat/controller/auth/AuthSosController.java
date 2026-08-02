@@ -18,15 +18,18 @@ public class AuthSosController {
     private final SosService sosService;
 
     @PostMapping("/send")
-    // Thêm @Valid vào đây
-    public ResponseEntity<ApiResponse<String>> sendSosAlert(@RequestBody @Valid SosRequest requestDto) {
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> sendSosAlert(@RequestBody @Valid SosRequest requestDto) {
+        String identifier = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        Integer id = sosService.processSosRequest(requestDto, identifier);
 
-        sosService.processSosRequest(requestDto);
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("id", id);
+        data.put("message", "Tín hiệu SOS đã được phát đi. Đội cứu hộ đang xác định vị trí của bạn!");
 
-        ApiResponse<String> response = new ApiResponse<>(
+        ApiResponse<java.util.Map<String, Object>> response = new ApiResponse<>(
                 200,
                 "Success",
-                "Tín hiệu SOS đã được phát đi. Đội cứu hộ đang xác định vị trí của bạn!"
+                data
         );
 
         return ResponseEntity.ok(response);

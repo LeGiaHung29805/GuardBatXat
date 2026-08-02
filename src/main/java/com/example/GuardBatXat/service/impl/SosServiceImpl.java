@@ -16,6 +16,8 @@ import com.example.GuardBatXat.repository.UserRepository;
 import com.example.GuardBatXat.service.SosService;
 import com.example.GuardBatXat.websocket.NotificationSender;
 import com.example.GuardBatXat.repository.NotificationRepository;
+import com.example.GuardBatXat.exception.AppException;
+import com.example.GuardBatXat.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -38,10 +40,24 @@ public class SosServiceImpl implements SosService {
 
     @Override
     @Transactional
-    public void processSosRequest(SosRequest requestDto) {
+    public Integer processSosRequest(SosRequest requestDto, String identifier) {
         log.info("Bắt đầu xử lý yêu cầu SOS từ SĐT: {}", requestDto.getSenderPhone());
 
-        sosRequestRepository.insertSosRequestNative(
+        Integer senderId = null;
+        if (identifier != null && !"anonymousUser".equals(identifier)) {
+            User user = userRepository.findByIdentifier(identifier).orElse(null);
+            if (user != null) {
+                senderId = user.getUserId();
+                if (requestDto.getSenderPhone() == null || requestDto.getSenderPhone().trim().isEmpty()) {
+                    requestDto.setSenderPhone(user.getUsername());
+                }
+                if (requestDto.getSenderName() == null || requestDto.getSenderName().trim().isEmpty()) {
+                    requestDto.setSenderName(user.getFullName());
+                }
+            }
+        }
+
+        Integer generatedId = sosRequestRepository.insertSosRequestNative(
                 requestDto.getSenderPhone(),
                 requestDto.getMessage(),
                 requestDto.getLat(),
@@ -50,18 +66,19 @@ public class SosServiceImpl implements SosService {
                 requestDto.getTotalPeople() != null ? requestDto.getTotalPeople() : 1,
                 requestDto.getElderlyCount() != null ? requestDto.getElderlyCount() : 0,
                 requestDto.getChildrenCount() != null ? requestDto.getChildrenCount() : 0,
-                null
+                senderId
         );
 
         // Bắn WebSocket tới các tài khoản có role COMMANDER / RESCUE_TEAM
         try {
-            // Giả sử NotificationSender có hàm convertAndSend hoặc tương tự
-            // Topic nhận cảnh báo trên Frontend thường là "/topic/emergency"
+            requestDto.setId(generatedId);
             notificationSender.sendEmergencyAlert("/topic/emergency", requestDto);
             log.info("Đã phát tín hiệu SOS Real-time tới trung tâm chỉ huy.");
         } catch (Exception e) {
             log.error("Lỗi khi phát tín hiệu WebSocket: {}", e.getMessage());
         }
+
+        return generatedId;
     }
 
     @Override
@@ -94,10 +111,13 @@ public class SosServiceImpl implements SosService {
     @Override
     @Transactional
     public void acceptSosRequest(Integer id, String identifier) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         SosEntity sos = sosRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy SOS"));
+                .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
         User user = userRepository.findByIdentifier(identifier)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         
         sos.setStatus("RESCUING");
         sos.setAssignedUser(user);
@@ -111,26 +131,33 @@ public class SosServiceImpl implements SosService {
             notification.setAlertLevel("Cứu hộ");
             notification.setTargetUser(sos.getSender());
             notificationRepository.save(notification);
+        }
 
-            // Gửi WebSocket thông báo riêng tư đến user này
-            try {
-                java.util.Map<String, Object> wsPayload = new java.util.HashMap<>();
-                wsPayload.put("type", "MANUAL_ALERT");
-                wsPayload.put("title", notification.getTitle());
-                wsPayload.put("content", notification.getContent());
+        // Gửi WebSocket thông báo riêng tư đến user này
+        try {
+            java.util.Map<String, Object> wsPayload = new java.util.HashMap<>();
+            wsPayload.put("type", "MANUAL_ALERT");
+            wsPayload.put("title", "Đội cứu hộ đang di chuyển");
+            wsPayload.put("content", "Đội cứu hộ (" + user.getFullName() + ") đã tiếp nhận yêu cầu SOS của bạn và đang di chuyển tới vị trí của bạn.");
+            if (sos.getSender() != null) {
                 wsPayload.put("targetUser", sos.getSender().getUserId());
-                notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
-            } catch (Exception e) {
-                log.error("Lỗi gửi WS cảnh báo cứu hộ: " + e.getMessage());
             }
+            wsPayload.put("targetSosId", sos.getId());
+            wsPayload.put("targetPhone", sos.getSenderPhone());
+            notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
+        } catch (Exception e) {
+            log.error("Lỗi gửi WS cảnh báo cứu hộ: " + e.getMessage());
         }
     }
 
     @Override
     @Transactional
     public void completeSosRequest(Integer id, String identifier) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         SosEntity sos = sosRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy SOS"));
+                .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
         
         // Kiểm tra xem người hoàn thành có phải là người đã nhận không
         if (sos.getAssignedUser() == null || !sos.getAssignedUser().getUsername().equals(identifier)) {
@@ -180,8 +207,11 @@ public class SosServiceImpl implements SosService {
     @Override
     @Transactional
     public void addSosUpdate(Integer sosId, com.example.GuardBatXat.dto.request.rescue.SosUpdateLogRequest request, String identifier) {
+        if (identifier == null || "anonymousUser".equals(identifier)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         SosEntity sos = sosRequestRepository.findById(sosId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy SOS"));
+                .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
 
         String imagesJoined = null;
         if (request.getImages() != null && !request.getImages().isEmpty()) {
@@ -207,18 +237,22 @@ public class SosServiceImpl implements SosService {
             notification.setAlertLevel("Cứu hộ");
             notification.setTargetUser(sos.getSender());
             notificationRepository.save(notification);
+        }
 
-            // Gửi WebSocket thông báo riêng tư đến user này
-            try {
-                java.util.Map<String, Object> wsPayload = new java.util.HashMap<>();
-                wsPayload.put("type", "MANUAL_ALERT");
-                wsPayload.put("title", notification.getTitle());
-                wsPayload.put("content", notification.getContent());
+        // Gửi WebSocket thông báo riêng tư đến user này
+        try {
+            java.util.Map<String, Object> wsPayload = new java.util.HashMap<>();
+            wsPayload.put("type", "MANUAL_ALERT");
+            wsPayload.put("title", "Cập nhật cứu hộ");
+            wsPayload.put("content", "Đội cứu hộ cập nhật trạng thái: " + request.getMessage());
+            if (sos.getSender() != null) {
                 wsPayload.put("targetUser", sos.getSender().getUserId());
-                notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
-            } catch (Exception e) {
-                log.error("Lỗi gửi WS cảnh báo cứu hộ: " + e.getMessage());
             }
+            wsPayload.put("targetSosId", sos.getId());
+            wsPayload.put("targetPhone", sos.getSenderPhone());
+            notificationSender.sendSystemNotification("/topic/alerts", wsPayload);
+        } catch (Exception e) {
+            log.error("Lỗi gửi WS cảnh báo cứu hộ: " + e.getMessage());
         }
     }
 }

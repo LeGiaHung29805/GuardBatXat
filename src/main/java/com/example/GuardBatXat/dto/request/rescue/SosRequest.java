@@ -29,4 +29,5 @@ public class SosRequest {
     private Integer totalPeople;
     private Integer elderlyCount;
     private Integer childrenCount;
+    private Integer id;
 }
