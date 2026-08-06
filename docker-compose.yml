@@ -1,21 +1,24 @@
 version: '3.8'
 
 services:
-  # 0. Database PostgreSQL (Mới thêm vào)
   postgres-db:
-    image: postgres:15-alpine
+    image: postgis/postgis:15-3.4-alpine
     container_name: batxat_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: guard_bat_xat
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-hieu040205}
+      POSTGRES_DB: GuardBatXat
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Lưu dữ liệu vĩnh viễn không bị mất khi tắt
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # 1. Trạm trung chuyển Redis
   redis:
     image: redis:alpine
     container_name: batxat_redis
@@ -23,79 +26,81 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
-  # 2. Backend Spring Boot (Nằm trong BatXat/GuardBatXat)
   backend:
     build:
-      context: ./BatXat/GuardBatXat
+      context: .
       dockerfile: Dockerfile
     container_name: batxat_backend
     ports:
       - "8080:8080"
     depends_on:
-      - redis
-      - postgres-db # Chờ DB khởi động xong mới chạy Spring Boot
+      postgres-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
-      # ĐÃ SỬA: Chọc thẳng vào biến postgres-db thay vì host.docker.internal
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/guard_bat_xat
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/GuardBatXat
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=12345678
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-hieu040205}
       - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-DayLaMotKhoaBaoMatCucKyDaiVaPhucTapCuaHeThongCanhBaoThienTaiBatXat2026!@#}
+      - AI_SERVICE_BASE_URL=http://python-api:5000
     restart: unless-stopped
 
-  # 3. Module AI Inference
-  python-ai:
+  python-api:
     build:
-      context: ./GuardBaXat/Spatial-Intelligence
+      context: ../GuardBaXat/Spatial-Intelligence
       dockerfile: Dockerfile
-    container_name: batxat_ai_engine
+    container_name: batxat_ai_api
+    ports:
+      - "5000:5000"
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     volumes:
-      - ./GuardBaXat/Spatial-Intelligence/data:/app/data
-      - ./GuardBaXat/Spatial-Intelligence/models:/app/models
+      - ../GuardBaXat/Spatial-Intelligence/data:/app/data
+      - ../GuardBaXat/Spatial-Intelligence/models:/app/models
     environment:
       - DB_HOST=postgres-db
-      - DB_NAME=guard_bat_xat
+      - DB_NAME=GuardBatXat
       - DB_USER=postgres
-      - DB_PASS=12345678
-    command: python src/module2/06_inference.py
+      - DB_PASS=${DB_PASSWORD:-hieu040205}
+    command: python src/api_clients/module3_api/routing_nearest.py
     restart: unless-stopped
 
-  # 4. Module Data Fusion
-  python-worker:
+  python-scheduler:
     build:
-      context: ./GuardBaXat/Spatial-Intelligence
+      context: ../GuardBaXat/Spatial-Intelligence
       dockerfile: Dockerfile
-    container_name: batxat_data_fusion
+    container_name: batxat_scheduler
     depends_on:
-      - postgres-db # Chờ DB khởi động xong
+      postgres-db:
+        condition: service_healthy
     volumes:
-      - ./GuardBaXat/Spatial-Intelligence/data:/app/data
+      - ../GuardBaXat/Spatial-Intelligence/data:/app/data
+      - ../GuardBaXat/Spatial-Intelligence/models:/app/models
     environment:
-      - DB_HOST=postgres-db # ĐÃ SỬA: Chọc vào postgres-db
-      - API_KEY_VC=97JQA9YSSKCDXW3HVV8CZDQB6
-    command: python src/module1/04_data_fusion.py
+      - DB_HOST=postgres-db
+      - DB_NAME=GuardBatXat
+      - DB_USER=postgres
+      - DB_PASS=${DB_PASSWORD:-hieu040205}
+    command: python main_scheduler.py
     restart: always
 
-  # 5. Giao diện WebGIS Next.js (Nằm trong BatXat-Client)
   frontend:
     build:
-      context: ./BatXat-Client
+      context: ../BatXat-Client
       dockerfile: Dockerfile
     container_name: batxat_frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
-    volumes:
-      - ./BatXat-Client:/app
-      - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8080
       - INTERNAL_API_URL=http://backend:8080
     restart: unless-stopped
 
-# Khai báo volume tổng để bảo vệ dữ liệu Postgres
 volumes:
   postgres_data:

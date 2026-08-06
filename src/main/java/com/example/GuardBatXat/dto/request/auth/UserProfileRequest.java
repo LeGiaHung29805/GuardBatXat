@@ -18,4 +18,7 @@ public class UserProfileRequest {
     private String emergencyContactPhone;
     private String medicalNotes;
     private String specialAssets;
+
+    private Long defaultBuildingId;
+    private java.math.BigDecimal trustScore;
 }

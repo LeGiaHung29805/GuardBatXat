@@ -11,4 +11,6 @@ public class UserUpdateRequest {
     private String phoneNumber;
     private String roleName;
     private String assignedStation;
+    private Long defaultBuildingId;
+    private java.math.BigDecimal trustScore;
 }

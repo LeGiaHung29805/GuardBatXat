@@ -11,6 +11,7 @@ import com.example.GuardBatXat.service.CommanderDashboardService;
 import com.example.GuardBatXat.service.NotificationService;
 import com.example.GuardBatXat.websocket.NotificationSender;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -62,7 +64,13 @@ public class NotificationServiceImpl implements NotificationService {
         double centerLat = 22.6133;
         double centerLng = 103.8647;
 
-        Double numLevel = Double.valueOf(level);
+        Double numLevel;
+        try {
+            numLevel = Double.valueOf(level.replace("m", "").trim());
+        } catch (NumberFormatException e) {
+            log.warn("Level không hợp lệ, fallback về 80.0: {}", level);
+            numLevel = 80.0;
+        }
         List<CommanderFloodProjection> floodedBuildings = commanderDashboardService.getCommanderFloodHeatmap(numLevel);
 
         if (floodedBuildings != null && !floodedBuildings.isEmpty()) {
@@ -105,7 +113,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public List<NotificationResponse> getNotificationHistory() {
-        List<Notification> realNotifications = notificationRepository.findTop20ByOrderByCreatedAtDesc();
+        List<Notification> realNotifications = notificationRepository.findTop20ByTargetUserIsNullOrderByCreatedAtDesc();
 
         return realNotifications.stream().map(n -> {
             String time = n.getCreatedAt() != null 

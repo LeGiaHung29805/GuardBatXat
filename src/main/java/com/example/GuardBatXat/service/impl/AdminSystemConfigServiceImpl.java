@@ -64,12 +64,16 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         ModelRegistry targetModel = modelRegistryRepository.findById(modelId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy mô hình AI!"));
 
-        // Bước 1: Tắt tất cả các model đang chạy cùng loại
-        modelRegistryRepository.deactivateAllModelsByTarget(targetModel.getModelTarget());
+        String target = targetModel.getModelTarget();
 
-        // Bước 2: Bật model được Admin chọn
-        targetModel.setIsActive(true);
-        ModelRegistry savedModel = modelRegistryRepository.save(targetModel);
+        // Bước 1: Tắt tất cả các model đang chạy cùng loại
+        modelRegistryRepository.deactivateAllModelsByTarget(target);
+
+        // Bước 2: Tải lại thực thể mới từ DB và bật model được Admin chọn
+        ModelRegistry freshModel = modelRegistryRepository.findById(modelId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy mô hình AI!"));
+        freshModel.setIsActive(true);
+        ModelRegistry savedModel = modelRegistryRepository.save(freshModel);
 
         try {
             notificationSender.sendSystemNotification("/topic/system-config-updates", "AI Model Changed: " + savedModel.getModelName());

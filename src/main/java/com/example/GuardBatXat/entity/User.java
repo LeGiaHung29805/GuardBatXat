@@ -42,6 +42,13 @@ public class User {
     @Column(name = "assigned_station", length = 20)
     private String assignedStation;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_building_id")
+    private Building defaultBuilding;
+
+    @Column(name = "trust_score", precision = 3, scale = 2)
+    private java.math.BigDecimal trustScore;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 

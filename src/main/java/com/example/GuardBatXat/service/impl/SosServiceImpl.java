@@ -118,6 +118,10 @@ public class SosServiceImpl implements SosService {
                 .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
         User user = userRepository.findByIdentifier(identifier)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!"OPEN".equals(sos.getStatus())) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Yêu cầu SOS này đã được tiếp nhận hoặc hoàn thành bởi người khác!");
+        }
         
         sos.setStatus("RESCUING");
         sos.setAssignedUser(user);
@@ -161,7 +165,7 @@ public class SosServiceImpl implements SosService {
         
         // Kiểm tra xem người hoàn thành có phải là người đã nhận không
         if (sos.getAssignedUser() == null || !sos.getAssignedUser().getUsername().equals(identifier)) {
-            // Có thể bỏ qua kiểm tra này nếu muốn các thành viên khác trong đội có thể đóng
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Bạn không phải là cứu hộ viên được phân công cho nhiệm vụ này!");
         }
         
         sos.setStatus("COMPLETED");
@@ -185,7 +189,7 @@ public class SosServiceImpl implements SosService {
 
     @Override
     public List<com.example.GuardBatXat.dto.response.rescue.SosUpdateLogResponse> getSosUpdates(Integer sosId) {
-        List<com.example.GuardBatXat.entity.SosUpdateLog> logs = sosUpdateLogRepository.findBySosRequestIdOrderByCreatedAtDesc(sosId);
+        List<com.example.GuardBatXat.entity.SosUpdateLog> logs = sosUpdateLogRepository.findBySosRequestIdOrderByCreatedAtAsc(sosId);
         return logs.stream().map(log -> {
             List<String> imagesList = null;
             if (log.getImages() != null && !log.getImages().isEmpty()) {
@@ -212,6 +216,10 @@ public class SosServiceImpl implements SosService {
         }
         SosEntity sos = sosRequestRepository.findById(sosId)
                 .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
+
+        if (sos.getAssignedUser() == null || !sos.getAssignedUser().getUsername().equals(identifier)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Bạn không thể cập nhật nhật ký cho yêu cầu SOS không thuộc quyền xử lý của bạn!");
+        }
 
         String imagesJoined = null;
         if (request.getImages() != null && !request.getImages().isEmpty()) {

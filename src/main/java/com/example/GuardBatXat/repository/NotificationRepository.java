@@ -14,6 +14,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Inte
 
     List<Notification> findTop20ByOrderByCreatedAtDesc();
 
+    List<Notification> findTop20ByTargetUserIsNullOrderByCreatedAtDesc();
+
     @Query("SELECT n FROM Notification n WHERE n.alertLevel = :alertLevel ORDER BY n.createdAt DESC")
     List<Notification> findByAlertLevelOrderByCreatedAtDesc(String alertLevel);
 

@@ -25,23 +25,35 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class RoutingServiceImpl implements RoutingService {
 
-    private final String PYTHON_AI_URL = "http://localhost:5000/api/v1/ai/safe-routing";
-    private final String PYTHON_SHELTER_URL = "http://localhost:5000/api/v1/ai/find-safe-shelter";
+    @org.springframework.beans.factory.annotation.Value("${batxat.ai.service.base-url:http://localhost:5000}")
+    private String aiServiceBaseUrl;
+
     private final RoadNodeRepository roadNodeRepository;
-    private final String PYTHON_ADMIN_COMPARE_URL = "http://localhost:5000/api/v1/ai/admin-routing";
     private final com.example.GuardBatXat.websocket.NotificationSender notificationSender;
+    private final RestTemplate restTemplate;
+
+    private String getPythonAiUrl() {
+        return aiServiceBaseUrl + "/api/v1/ai/safe-routing";
+    }
+
+    private String getPythonShelterUrl() {
+        return aiServiceBaseUrl + "/api/v1/ai/find-safe-shelter";
+    }
+
+    private String getPythonAdminCompareUrl() {
+        return aiServiceBaseUrl + "/api/v1/ai/admin-routing";
+    }
 
     @Override
     public Object getSafeRouteFromAI(RoutingRequest request) {
-        RestTemplate restTemplate = new RestTemplate();
         try {
-            log.info("Đang gọi AI Python tìm đường...");
+            log.info("Đang gọi AI Python tìm đường tại: {}", getPythonAiUrl());
             try {
                 notificationSender.sendSystemNotification("/topic/task-progress", "Đang khởi tạo thuật toán AI tìm đường đi an toàn...");
             } catch (Exception e) {}
 
-            // NHẬN VỀ Map.class ĐỂ TRÍCH XUẤT DỮ LIỆU LINH HOẠT
-            ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_AI_URL, request, Map.class);
+            // NHẬN VỀ Map.class ĐỂ TRÍCH XUẤU DỮ LIỆU LINH HOẠT
+            ResponseEntity<Map> response = restTemplate.postForEntity(getPythonAiUrl(), request, Map.class);
             Map<String, Object> body = response.getBody();
 
             try {
@@ -49,7 +61,7 @@ public class RoutingServiceImpl implements RoutingService {
             } catch (Exception e) {}
 
             if (body != null && "success".equals(body.get("status"))) {
-                // 1. CHUYỂN ĐỔI TOẠ ĐỘ (Fix lỗi dòng 56)
+                // 1. CHUYỂN ĐỔI TOẠ ĐỘ
                 List<List<Double>> rawCoords = (List<List<Double>>) body.get("route_coordinates");
                 List<double[]> pathPoints = new ArrayList<>();
 
@@ -61,18 +73,17 @@ public class RoutingServiceImpl implements RoutingService {
                     }
                 }
 
-                // 2. LẤY CHI PHÍ (Fix lỗi scope 'cost')
+                // 2. LẤY CHI PHÍ
                 Double cost = Double.valueOf(body.get("total_mcdm_cost").toString());
 
-                // 3. KHAI BÁO STRATEGY NAME (Thêm phần này để hết lỗi)
-                // Lấy từ request (nếu RoutingRequest có trường này) hoặc gán mặc định
+                // 3. KHAI BÁO STRATEGY NAME
                 String strategyName = request.getStrategyName();
                 if (body.get("strategy") != null) {
                     strategyName = body.get("strategy").toString();
                 }
 
                 return RoutingResponse.builder()
-                        .strategyName(strategyName) // Lúc này IDE đã hiểu strategyName là gì
+                        .strategyName(strategyName)
                         .totalDistance(cost)
                         .pathPoints(pathPoints)
                         .build();
@@ -84,16 +95,15 @@ public class RoutingServiceImpl implements RoutingService {
         }
     }
 
-
     @Override
     public Object findSafeShelterFromAI(FindShelterRequest request) {
-        RestTemplate restTemplate = new RestTemplate();
         try {
-            log.info("Đang gọi AI tìm điểm sơ tán cho tọa độ: [{}, {}] - Chiến lược: {}",
+            log.info("Đang gọi AI tìm điểm sơ tán cho tọa độ: [{}, {}] - Chiến lược: {} tại: {}",
                     request.getCurrentLat(), request.getCurrentLng(),
-                    request.getStrategy() != null ? request.getStrategy() : "safety");
+                    request.getStrategy() != null ? request.getStrategy() : "safety",
+                    getPythonShelterUrl());
 
-            ResponseEntity<Object> response = restTemplate.postForEntity(PYTHON_SHELTER_URL, request, Object.class);
+            ResponseEntity<Object> response = restTemplate.postForEntity(getPythonShelterUrl(), request, Object.class);
             return response.getBody();
 
         } catch (HttpStatusCodeException e) {
@@ -105,9 +115,7 @@ public class RoutingServiceImpl implements RoutingService {
             throw new RuntimeException("Hệ thống AI tìm điểm sơ tán đang bảo trì hoặc mất kết nối mạng!");
         }
     }
-    // ==========================================
-    // HÀM MỚI: TÌM 3 ĐƯỜNG CÙNG LÚC CHO ADMIN
-    // ==========================================
+
     @Override
     public RoutingCompareResponse findAdminCompareRoute(RoutingRequest request) {
         Long startNode = roadNodeRepository.findNearestNode(request.getStartLat(), request.getStartLng());
@@ -117,15 +125,14 @@ public class RoutingServiceImpl implements RoutingService {
             throw new RuntimeException("Khu vực chưa có dữ liệu mạng lưới giao thông!");
         }
 
-        RestTemplate restTemplate = new RestTemplate();
         try {
-            log.info("Admin đang kiểm chứng 3 lộ trình từ {} đến {}", request.getStartLat(), request.getEndLat());
+            log.info("Admin đang kiểm chứng 3 lộ trình từ {} đến {} tại: {}", request.getStartLat(), request.getEndLat(), getPythonAdminCompareUrl());
             try {
                 notificationSender.sendSystemNotification("/topic/task-progress", "Hệ thống AI đang phân tích và đối chiếu 3 chiến lược định tuyến. Quá trình này có thể mất vài giây...");
             } catch (Exception e) {}
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(PYTHON_ADMIN_COMPARE_URL, request, Map.class);
-            Map<String, Object> body = response.getBody(   );
+            ResponseEntity<Map> response = restTemplate.postForEntity(getPythonAdminCompareUrl(), request, Map.class);
+            Map<String, Object> body = response.getBody();
 
             try {
                 notificationSender.sendSystemNotification("/topic/task-progress", "Đã hoàn tất phân tích đối chiếu 3 lộ trình.");
@@ -144,12 +151,10 @@ public class RoutingServiceImpl implements RoutingService {
 
         } catch (Exception e) {
             log.error("Lỗi Admin Routing: {}", e.getMessage());
-            // ĐÚNG YÊU CẦU: TỚI ĐÂY LÀ CHẶN LUÔN, KHÔNG DÙNG MOCK DATA!
             throw new RuntimeException("Dữ liệu thực tế báo cáo khu vực này đang bị cô lập, không có tuyến đường an toàn.");
         }
     }
 
-    // Hàm hỗ trợ ép kiểu dữ liệu từ Python sang Java
     private List<double[]> convertToDoubleArray(List<List<Double>> input) {
         List<double[]> output = new ArrayList<>();
         if (input != null) {
@@ -162,10 +167,13 @@ public class RoutingServiceImpl implements RoutingService {
         return output;
     }
 
-
     @Override
     public RoutingResponse findOptimalRoute(String strategyName, RoutingRequest request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findOptimalRoute'");
+        request.setStrategyName(strategyName);
+        Object response = getSafeRouteFromAI(request);
+        if (response instanceof RoutingResponse) {
+            return (RoutingResponse) response;
+        }
+        throw new RuntimeException("Lỗi định tuyến tối ưu");
     }
 } // Kết thúc class

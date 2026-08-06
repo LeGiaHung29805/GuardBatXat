@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface SosUpdateLogRepository extends JpaRepository<SosUpdateLog, Integer> {
-    List<SosUpdateLog> findBySosRequestIdOrderByCreatedAtDesc(Integer sosRequestId);
+    List<SosUpdateLog> findBySosRequestIdOrderByCreatedAtAsc(Integer sosRequestId);
 }

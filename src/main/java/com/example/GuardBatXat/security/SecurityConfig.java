@@ -82,13 +82,13 @@
                             .requestMatchers("/ws-guardbatxat/**").permitAll()
                             .requestMatchers("/ws/**").permitAll()
 
-                            // PRIVATE endpoints (cần token) - TẠM THỜI BỎ PHÂN QUYỀN
-                            // .requestMatchers("/api/v1/users/**").authenticated()
-                            // .requestMatchers("/api/v1/rescue/**").authenticated()
-                            // .requestMatchers("/api/v1/commander/**").authenticated()
+                            // PRIVATE endpoints (cần token) - KHÔI PHỤC PHÂN QUYỀN
+                            .requestMatchers("/api/v1/users/**").authenticated()
+                            .requestMatchers("/api/v1/rescue/**").hasAnyRole("RESCUE_TEAM", "COMMANDER", "ADMIN")
+                            .requestMatchers("/api/commander/**").hasAnyRole("COMMANDER", "ADMIN")
+                            .requestMatchers("/api/admin/**").hasRole("ADMIN")
                             // Tất cả request khác cần authenticated
-                            // .anyRequest().authenticated()
-                            .anyRequest().permitAll()
+                            .anyRequest().authenticated()
                     )
                     .authenticationProvider(authenticationProvider())
                     .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)  // BẬT LẠI

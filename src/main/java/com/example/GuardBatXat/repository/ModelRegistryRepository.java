@@ -16,7 +16,7 @@ public interface ModelRegistryRepository extends JpaRepository<ModelRegistry, In
     Optional<ModelRegistry> findByModelTargetAndIsActiveTrue(String modelTarget);
 
     // Dùng khi Admin kích hoạt 1 model mới -> Phải tắt hết các model cùng loại thiên tai trước đó
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE ModelRegistry m SET m.isActive = false WHERE m.modelTarget = :target")
     void deactivateAllModelsByTarget(@Param("target") String target);
 }

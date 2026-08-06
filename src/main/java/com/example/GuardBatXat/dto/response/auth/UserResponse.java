@@ -18,6 +18,8 @@ public class UserResponse {
     private String phoneNumber;
     private String roleName;
     private String assignedStation;
+    private Long defaultBuildingId;
+    private java.math.BigDecimal trustScore;
     private Boolean isActive;
     private LocalDateTime createdAt;
 }

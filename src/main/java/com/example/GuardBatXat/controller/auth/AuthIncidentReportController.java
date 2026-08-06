@@ -56,6 +56,7 @@ public class AuthIncidentReportController {
     }
 
     @PutMapping("/{id}/status")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COMMANDER', 'ADMIN')")
     public ResponseEntity<ApiResponse<IncidentReportResponse>> updateStatus(
             @PathVariable("id") Integer id,
             @RequestParam("status") String status) {

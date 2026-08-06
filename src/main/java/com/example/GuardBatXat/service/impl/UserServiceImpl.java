@@ -9,6 +9,8 @@ import com.example.GuardBatXat.entity.User;
 import com.example.GuardBatXat.entity.UserProfile;
 import com.example.GuardBatXat.mapper.UserMapper;
 import com.example.GuardBatXat.mapper.UserProfileMapper;
+import com.example.GuardBatXat.entity.Building;
+import com.example.GuardBatXat.repository.BuildingRepository;
 import com.example.GuardBatXat.repository.RoleRepository;
 import com.example.GuardBatXat.repository.UserRepository;
 import com.example.GuardBatXat.service.UserService;
@@ -33,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final UserProfileMapper userProfileMapper;
+    private final BuildingRepository buildingRepository;
     @Override
     @Cacheable(value = "users", key = "'all'")
     public List<UserResponse> getAllUsers() {
@@ -121,6 +124,14 @@ public class UserServiceImpl implements UserService {
         if (request.getFullName() != null) user.setFullName(request.getFullName());
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
         if (request.getAssignedStation() != null) user.setAssignedStation(request.getAssignedStation());
+        if (request.getDefaultBuildingId() != null) {
+            Building building = buildingRepository.findById(request.getDefaultBuildingId())
+                    .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
+            user.setDefaultBuilding(building);
+        }
+        if (request.getTrustScore() != null) {
+            user.setTrustScore(request.getTrustScore());
+        }
 
         // Đổi quyền (Role)
         if (request.getRoleName() != null) {
@@ -137,7 +148,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(userRepository.save(user));
     }
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     @Cacheable(value = "userProfile", key = "#identifier")
     public UserResponse getMyProfile(String identifier) {
         if (identifier == null || "anonymousUser".equals(identifier)) {
@@ -148,7 +159,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.toUserResponse(user);
     }
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     @Cacheable(value = "survivalProfile", key = "#identifier")
     public UserProfileResponse getMySurvivalProfile(String identifier) {
         if (identifier == null || "anonymousUser".equals(identifier)) {
@@ -175,6 +186,14 @@ public class UserServiceImpl implements UserService {
         }
         if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
             user.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getDefaultBuildingId() != null) {
+            Building building = buildingRepository.findById(request.getDefaultBuildingId())
+                    .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
+            user.setDefaultBuilding(building);
+        }
+        if (request.getTrustScore() != null) {
+            user.setTrustScore(request.getTrustScore());
         }
 
         UserProfile profile = user.getUserProfile();

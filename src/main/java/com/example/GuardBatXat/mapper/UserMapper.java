@@ -17,6 +17,7 @@ public interface UserMapper {
     User toUser(UserCreationRequest request);
 
     @Mapping(source = "role.roleName", target = "roleName")
+    @Mapping(source = "defaultBuilding.id", target = "defaultBuildingId")
     UserResponse toUserResponse(User user);
 
 }

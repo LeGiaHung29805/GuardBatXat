@@ -30,6 +30,9 @@ batxat:
     jwt:
       secret: ${JWT_SECRET:your_jwt_secret_key_here}
       expiration: 86400000
+  ai:
+    service:
+      base-url: ${AI_SERVICE_BASE_URL:http://localhost:5000}
 
 management:
   endpoints:
