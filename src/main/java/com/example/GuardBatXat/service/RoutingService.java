@@ -10,4 +10,5 @@ public interface RoutingService {
     Object findSafeShelterFromAI(FindShelterRequest request);
     RoutingResponse findOptimalRoute(String strategyName, RoutingRequest request);
     RoutingCompareResponse findAdminCompareRoute(RoutingRequest request);
+    Object compareSafetyRoutes(RoutingRequest request);
 }

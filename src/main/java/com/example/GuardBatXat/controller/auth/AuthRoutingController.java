@@ -27,4 +27,9 @@ public class AuthRoutingController {
         Object aiResponse = routingService.getSafeRouteFromAI(request);
         return ResponseEntity.ok(new ApiResponse<>(200, "Tìm đường thành công", aiResponse));
     }
+    @PostMapping("/compare-safety")
+    public ResponseEntity<ApiResponse<Object>> compareSafetyRoutes(@RequestBody RoutingRequest request) {
+        Object aiResponse = routingService.compareSafetyRoutes(request);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Lấy danh sách tuyến đường an toàn thành công", aiResponse));
+    }
 }

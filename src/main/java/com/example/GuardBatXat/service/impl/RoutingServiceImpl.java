@@ -176,4 +176,56 @@ public class RoutingServiceImpl implements RoutingService {
         }
         throw new RuntimeException("Lỗi định tuyến tối ưu");
     }
+
+    private String getPythonCompareSafetyUrl() {
+        return aiServiceBaseUrl + "/api/v1/ai/compare-safety";
+    }
+
+    @Override
+    public Object compareSafetyRoutes(RoutingRequest request) {
+        try {
+            log.info("Đang gọi AI Python tìm 3 tuyến đường an toàn tại: {}", getPythonCompareSafetyUrl());
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Đang khởi tạo thuật toán AI đối chiếu 3 lộ trình an toàn nhất...");
+            } catch (Exception e) {}
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(getPythonCompareSafetyUrl(), request, Map.class);
+            Map<String, Object> body = response.getBody();
+
+            try {
+                notificationSender.sendSystemNotification("/topic/task-progress", "Phân tích 3 tuyến đường an toàn thành công.");
+            } catch (Exception e) {}
+
+            if (body != null && "success".equals(body.get("status"))) {
+                List<Map<String, Object>> routesList = (List<Map<String, Object>>) body.get("routes");
+                List<Map<String, Object>> processedRoutes = new ArrayList<>();
+
+                if (routesList != null) {
+                    for (Map<String, Object> routeMap : routesList) {
+                        List<List<Double>> rawCoords = (List<List<Double>>) routeMap.get("route_coordinates");
+                        List<double[]> pathPoints = new ArrayList<>();
+                        if (rawCoords != null) {
+                            for (List<Double> point : rawCoords) {
+                                if (point != null && point.size() >= 2) {
+                                    pathPoints.add(new double[]{point.get(0), point.get(1)});
+                                }
+                            }
+                        }
+                        Double cost = Double.valueOf(routeMap.get("total_mcdm_cost").toString());
+
+                        processedRoutes.add(Map.of(
+                            "pathPoints", pathPoints,
+                            "totalDistance", cost
+                        ));
+                    }
+                }
+
+                return Map.of("routes", processedRoutes);
+            }
+            throw new RuntimeException("AI không tìm thấy đường đi an toàn.");
+        } catch (Exception e) {
+            log.error("Lỗi khi kết nối với module AI Python compare-safety: {}", e.getMessage());
+            throw new RuntimeException("Hệ thống AI đối chiếu lộ trình đang bảo trì hoặc mất kết nối!");
+        }
+    }
 } // Kết thúc class

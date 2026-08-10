@@ -149,7 +149,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "userProfile", key = "#identifier")
+    @Cacheable(value = "userProfile", key = "#identifier", unless = "#result == null")
     public UserResponse getMyProfile(String identifier) {
         if (identifier == null || "anonymousUser".equals(identifier)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
@@ -160,7 +160,7 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "survivalProfile", key = "#identifier")
+    @Cacheable(value = "survivalProfile", key = "#identifier", unless = "#result == null")
     public UserProfileResponse getMySurvivalProfile(String identifier) {
         if (identifier == null || "anonymousUser".equals(identifier)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
