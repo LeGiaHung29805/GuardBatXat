@@ -140,19 +140,23 @@ public class NotificationServiceImpl implements NotificationService {
             realNotifications = notificationRepository.findTop20ForUserOrderByCreatedAtDesc(user);
         }
 
-        return realNotifications.stream().map(n -> {
-            String time = n.getCreatedAt() != null 
-                ? n.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                : LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        java.time.LocalDateTime startOfToday = java.time.LocalDateTime.now().with(java.time.LocalTime.MIN);
 
-            return NotificationResponse.builder()
-                    .notifyId(n.getNotifyId() != null ? n.getNotifyId().longValue() : null)
-                    .targetArea(n.getAlertLevel() != null ? n.getAlertLevel() : "Huyện Bát Xát")
-                    .title(n.getTitle() != null ? n.getTitle() : "Thông báo")
-                    .content(n.getContent())
-                    .time(time)
-                    .isPersonal(n.getTargetUser() != null)
-                    .build();
-        }).collect(Collectors.toList());
+        return realNotifications.stream()
+                .filter(n -> n.getCreatedAt() != null && n.getCreatedAt().isAfter(startOfToday))
+                .map(n -> {
+                    String time = n.getCreatedAt() != null 
+                        ? n.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                        : java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+                    return NotificationResponse.builder()
+                            .notifyId(n.getNotifyId() != null ? n.getNotifyId().longValue() : null)
+                            .targetArea(n.getAlertLevel() != null ? n.getAlertLevel() : "Huyện Bát Xát")
+                            .title(n.getTitle() != null ? n.getTitle() : "Thông báo")
+                            .content(n.getContent())
+                            .time(time)
+                            .isPersonal(n.getTargetUser() != null)
+                            .build();
+                }).collect(Collectors.toList());
     }
 }
