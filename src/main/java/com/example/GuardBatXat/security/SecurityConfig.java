@@ -52,13 +52,10 @@
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
             CorsConfiguration configuration = new CorsConfiguration();
-
-            // Sử dụng allowedOriginPatterns thay cho allowedOrigins
             configuration.setAllowedOriginPatterns(List.of("*"));
             configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             configuration.setAllowedHeaders(List.of("*"));
             configuration.setAllowCredentials(true);
-
             UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
             source.registerCorsConfiguration("/**", configuration);
             return source;
@@ -78,16 +75,15 @@
                             .requestMatchers("/api/v1/routing/**").permitAll()
                             .requestMatchers("/actuator/**").permitAll()
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
+                            .requestMatchers("/api/v1/notifications").permitAll()
+                            .requestMatchers("/api/v1/incidents/stats").permitAll()
                             .requestMatchers("/ws-guardbatxat/**").permitAll()
                             .requestMatchers("/ws/**").permitAll()
-
                             // PRIVATE endpoints (cần token) - KHÔI PHỤC PHÂN QUYỀN
                             .requestMatchers("/api/v1/users/**").authenticated()
                             .requestMatchers("/api/v1/rescue/**").hasAnyRole("RESCUE_TEAM", "COMMANDER", "ADMIN")
                             .requestMatchers("/api/commander/**").hasAnyRole("COMMANDER", "ADMIN")
                             .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                            // Tất cả request khác cần authenticated
                             .anyRequest().authenticated()
                     )
                     .authenticationProvider(authenticationProvider())
