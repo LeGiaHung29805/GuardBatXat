@@ -51,7 +51,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> registerUser(@RequestBody @Valid UserCreationRequest request) {
 
-        UserResponse newUser = userService.createUser(request);
+        UserResponse newUser = userService.registerCitizen(request);
 
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
                 .code(200)

@@ -21,6 +21,7 @@ List<User> findAll();
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     boolean existsByPhoneNumber(String phoneNumber); // Quan trọng để check trùng SĐT
+    long countByRoleRoleName(String roleName);
 
     @Query("SELECT u FROM User u WHERE u.username = :identifier OR u.email = :identifier OR u.phoneNumber = :identifier")
     Optional<User> findByIdentifier(@Param("identifier") String identifier);

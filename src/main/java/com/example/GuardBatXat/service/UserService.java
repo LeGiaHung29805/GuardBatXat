@@ -11,6 +11,7 @@ import java.util.List;
 
 public interface UserService {
     List<UserResponse> getAllUsers();
+    UserResponse registerCitizen(UserCreationRequest request);
     UserResponse createUser(UserCreationRequest request);
     void toggleUserStatus(Integer userId);
     void deleteUser(Integer userId);
