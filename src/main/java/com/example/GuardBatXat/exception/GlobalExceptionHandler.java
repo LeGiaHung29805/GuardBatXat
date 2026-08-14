@@ -3,10 +3,13 @@ package com.example.GuardBatXat.exception;
 import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -41,6 +44,39 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.<Void>builder()
+                .code(400)
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.<Void>builder()
+                .code(409)
+                .message(ex.getMessage())
+                .build());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        logger.warn("Database constraint rejected a request", ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.<Void>builder()
+                .code(409)
+                .message("Dữ liệu xung đột với ràng buộc hiện có")
+                .build());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatus(ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(ApiResponse.<Void>builder()
+                .code(ex.getStatusCode().value())
+                .message(ex.getReason())
+                .build());
+    }
+
     // 3. Bắt mọi lỗi hệ thống (Chống sập App)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<String>> handleGlobalException(Exception ex) {
@@ -48,7 +84,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.internalServerError()
                 .body(ApiResponse.<String>builder()
                         .code(500)
-                        .message("Lỗi: " + ex.getMessage() + " | " + ex.getClass().getName())
+                        .message("Hệ thống gặp lỗi nội bộ. Vui lòng thử lại sau")
                         .build());
     }
 }
