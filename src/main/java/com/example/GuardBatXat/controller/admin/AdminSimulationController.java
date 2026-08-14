@@ -4,6 +4,7 @@ import com.example.GuardBatXat.entity.FloodSimulation;
 import com.example.GuardBatXat.dto.request.commander.FloodSimulationRequest;
 import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import com.example.GuardBatXat.dto.response.commander.FloodSimulationResponse;
+import com.example.GuardBatXat.dto.response.commander.FloodSimulationRunResponse;
 import com.example.GuardBatXat.service.FloodSimulationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +24,10 @@ public class AdminSimulationController {
     private final FloodSimulationService simulationService;
 
     @PostMapping("/flood")
-    public ResponseEntity<ApiResponse<List<FloodSimulationResponse>>> runFloodSimulation(
+    public ResponseEntity<ApiResponse<FloodSimulationRunResponse>> runFloodSimulation(
             @RequestBody @Valid FloodSimulationRequest request) {
 
-        return ResponseEntity.ok(ApiResponse.<List<FloodSimulationResponse>>builder()
+        return ResponseEntity.ok(ApiResponse.<FloodSimulationRunResponse>builder()
                 .code(200)
                 .message("Chạy mô phỏng ngập lụt hoàn tất")
                 .data(simulationService.runSimulation(request.getWaterLevel()))

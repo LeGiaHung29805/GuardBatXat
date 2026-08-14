@@ -3,6 +3,7 @@ import com.example.GuardBatXat.entity.Notification;
 import com.example.GuardBatXat.entity.Building;
 
 import com.example.GuardBatXat.dto.response.commander.FloodSimulationResponse;
+import com.example.GuardBatXat.dto.response.commander.FloodSimulationRunResponse;
 import com.example.GuardBatXat.dto.response.commander.FloodStatisticDto;
 import com.example.GuardBatXat.entity.FloodSimulation;
 import com.example.GuardBatXat.repository.FloodSimulationRepository;
@@ -25,7 +26,7 @@ public class FloodSimulationServiceImpl implements FloodSimulationService {
 
     @Override
     @Transactional
-    public List<FloodSimulationResponse> runSimulation(Double waterLevel) {
+    public FloodSimulationRunResponse runSimulation(Double waterLevel) {
         // 1. Sinh một ID kịch bản ngẫu nhiên cho lần chạy này
         String simId = UUID.randomUUID().toString();
 
@@ -53,7 +54,10 @@ public class FloodSimulationServiceImpl implements FloodSimulationService {
             e.printStackTrace();
         }
 
-        return responseList;
+        return FloodSimulationRunResponse.builder()
+                .simulationId(simId)
+                .results(responseList)
+                .build();
     }
 
     @Override
