@@ -11,12 +11,18 @@ import com.example.GuardBatXat.repository.ModelRegistryRepository;
 import com.example.GuardBatXat.service.AdminSystemConfigService;
 import com.example.GuardBatXat.websocket.NotificationSender;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +32,10 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
     private final ModelRegistryRepository modelRegistryRepository;
     private final AhpWeightRepository ahpWeightRepository;
     private final NotificationSender notificationSender;
+    private final RestTemplate restTemplate;
+
+    @Value("${batxat.ai.service.base-url:http://localhost:5000}")
+    private String aiServiceBaseUrl;
 
     private ModelRegistryResponse mapToModelResponse(ModelRegistry entity) {
         return ModelRegistryResponse.builder()
@@ -66,6 +76,8 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
 
         String target = targetModel.getModelTarget();
 
+        validateModelWithAiService(targetModel);
+
         // Bước 1: Tắt tất cả các model đang chạy cùng loại
         modelRegistryRepository.deactivateAllModelsByTarget(target);
 
@@ -84,6 +96,31 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         return mapToModelResponse(savedModel);
     }
 
+    private void validateModelWithAiService(ModelRegistry model) {
+        Map<String, String> request = new HashMap<>();
+        request.put("modelTarget", model.getModelTarget());
+        request.put("modelPath", model.getModelPath());
+        request.put("scalerPath", model.getScalerPath());
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.postForObject(
+                    aiServiceBaseUrl + "/api/v1/ai/models/validate",
+                    request,
+                    Map.class
+            );
+            if (response == null || !Boolean.TRUE.equals(response.get("valid"))) {
+                throw new IllegalStateException("AI service không xác nhận được model");
+            }
+        } catch (Exception exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Không thể kích hoạt model vì file/model scaler chưa hợp lệ",
+                    exception
+            );
+        }
+    }
+
         @Override
     public AhpWeightResponse getAhpWeights(String strategyName) {
         AhpWeight weight = ahpWeightRepository.findById(strategyName)
@@ -99,7 +136,16 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
                 + request.getWBridge() + request.getWReport();
 
         if (Math.abs(sum - 1.0) > 0.001) {
-            throw new RuntimeException("Tổng 6 trọng số AHP phải chính xác bằng 1.0. Hiện tại đang là: " + sum);
+            throw new IllegalArgumentException("Tổng 6 trọng số AHP phải bằng 1.0. Hiện tại là: " + sum);
+        }
+
+        if (request.getWDistance() < 0 || request.getWDistance() > 1
+                || request.getWFlood() < 0 || request.getWFlood() > 1
+                || request.getWLandslide() < 0 || request.getWLandslide() > 1
+                || request.getWCapacity() < 0 || request.getWCapacity() > 1
+                || request.getWBridge() < 0 || request.getWBridge() > 1
+                || request.getWReport() < 0 || request.getWReport() > 1) {
+            throw new IllegalArgumentException("Mỗi trọng số AHP phải nằm trong khoảng từ 0 đến 1");
         }
 
         AhpWeight weight = ahpWeightRepository.findById(strategyName)
