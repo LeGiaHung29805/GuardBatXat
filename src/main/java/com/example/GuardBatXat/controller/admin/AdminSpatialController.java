@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/admin/spatial")
@@ -61,12 +65,16 @@ public class AdminSpatialController {
     // ==========================================
 
     @GetMapping("/buildings")
-    public ResponseEntity<Map<String, Object>> getAllBuildings() {
+    public ResponseEntity<Map<String, Object>> getAllBuildings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "") String search) {
         Map<String, Object> response = new HashMap<>();
         try {
             response.put("code", 200);
             response.put("message", "Thành công");
-            response.put("data", spatialService.getAllBuildings());
+            Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), Sort.by("id"));
+            response.put("data", spatialService.getBuildings(search, pageable));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("code", 500);
@@ -76,12 +84,16 @@ public class AdminSpatialController {
     }
 
     @GetMapping("/roads")
-    public ResponseEntity<Map<String, Object>> getAllRoads() {
+    public ResponseEntity<Map<String, Object>> getAllRoads(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "") String search) {
         Map<String, Object> response = new HashMap<>();
         try {
             // SỬ DỤNG HÀM TỐI ƯU TỪ SERVICE
             // Hàm này truy vấn thẳng ra DTO, KHÔNG LÔI CỘT 'geom' LÊN RAM SERVER!
-            List<RoadEdgeListDto> optimizedData = spatialService.getAllRoadEdgesOptimized();
+            Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
+            Page<RoadEdgeListDto> optimizedData = spatialService.getRoadEdges(search, pageable);
 
             response.put("code", 200);
             response.put("message", "Thành công");

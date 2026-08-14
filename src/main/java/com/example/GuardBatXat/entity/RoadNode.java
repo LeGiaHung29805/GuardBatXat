@@ -18,6 +18,6 @@ public class RoadNode {
     private Double x;
     private Double y;
 
-    @Column(columnDefinition = "geometry(Point, 4326)")
+    @Column(name = "geometry", columnDefinition = "geometry(Point, 4326)")
     private Point geom;
 }

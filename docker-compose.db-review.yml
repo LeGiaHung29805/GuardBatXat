@@ -1,0 +1,20 @@
+services:
+  postgres-review:
+    image: postgis/postgis:15-3.4-alpine
+    container_name: batxat_db_review
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_REVIEW_PASSWORD:?DB_REVIEW_PASSWORD must be set}
+      POSTGRES_DB: postgres
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - batxat_db_review_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  batxat_db_review_data:
