@@ -8,6 +8,8 @@ import com.example.GuardBatXat.repository.UserRepository;
 import com.example.GuardBatXat.repository.SosRequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Component
+@ConditionalOnProperty(name = "batxat.demo.seed-enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class DataSeeder implements CommandLineRunner {
 
@@ -23,9 +26,24 @@ public class DataSeeder implements CommandLineRunner {
     private final SosRequestRepository sosRequestRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${batxat.demo.citizen-password}")
+    private String citizenPassword;
+    @Value("${batxat.demo.rescue-password}")
+    private String rescuePassword;
+    @Value("${batxat.demo.commander-password}")
+    private String commanderPassword;
+    @Value("${batxat.demo.admin-password}")
+    private String adminPassword;
+
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+        if (citizenPassword.isBlank() || rescuePassword.isBlank()
+                || commanderPassword.isBlank() || adminPassword.isBlank()) {
+            throw new IllegalStateException(
+                    "Demo seeding requires all BATXAT_DEMO_*_PASSWORD values"
+            );
+        }
         // 1. Đảm bảo 4 role tồn tại trong DB
         String[] roleNames = {"CITIZEN", "RESCUE_TEAM", "COMMANDER", "ADMIN"};
         for (String roleName : roleNames) {
@@ -44,7 +62,7 @@ public class DataSeeder implements CommandLineRunner {
             User u = new User();
             u.setUsername("citizen@batxat.local");
             u.setEmail("citizen@batxat.local");
-            u.setPasswordHash(passwordEncoder.encode("Citizen@2026"));
+            u.setPasswordHash(passwordEncoder.encode(citizenPassword));
             u.setFullName("Người Dân Bát Xát");
             u.setIsActive(true);
             u.setRole(r);
@@ -58,7 +76,7 @@ public class DataSeeder implements CommandLineRunner {
             User u = new User();
             u.setUsername("rescue@batxat.local");
             u.setEmail("rescue@batxat.local");
-            u.setPasswordHash(passwordEncoder.encode("Rescue@2026"));
+            u.setPasswordHash(passwordEncoder.encode(rescuePassword));
             u.setFullName("Đội Cứu Hộ Bát Xát");
             u.setIsActive(true);
             u.setRole(r);
@@ -72,7 +90,7 @@ public class DataSeeder implements CommandLineRunner {
             User u = new User();
             u.setUsername("commander@batxat.local");
             u.setEmail("commander@batxat.local");
-            u.setPasswordHash(passwordEncoder.encode("Commander@2026"));
+            u.setPasswordHash(passwordEncoder.encode(commanderPassword));
             u.setFullName("Chỉ Huy Trưởng Bát Xát");
             u.setIsActive(true);
             u.setRole(r);
@@ -86,7 +104,7 @@ public class DataSeeder implements CommandLineRunner {
             User u = new User();
             u.setUsername("admin@batxat.local");
             u.setEmail("admin@batxat.local");
-            u.setPasswordHash(passwordEncoder.encode("Admin@2026"));
+            u.setPasswordHash(passwordEncoder.encode(adminPassword));
             u.setFullName("Quản Trị Viên Hệ Thống");
             u.setIsActive(true);
             u.setRole(r);

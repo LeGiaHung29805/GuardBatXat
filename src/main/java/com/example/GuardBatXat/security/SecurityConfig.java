@@ -1,6 +1,7 @@
     package com.example.GuardBatXat.security;
 
     import lombok.RequiredArgsConstructor;
+    import org.springframework.beans.factory.annotation.Value;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Configuration;
     import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +23,7 @@
     import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
     import java.util.Arrays;
     import java.util.List;
+    import java.util.stream.Collectors;
     @Configuration
     @EnableMethodSecurity
     @RequiredArgsConstructor
@@ -30,6 +32,9 @@
         private final UserDetailsServiceImpl userDetailsService;
         private final JwtAuthFilter jwtAuthFilter;
         private final RateLimitingFilter rateLimitingFilter;
+
+        @Value("${batxat.security.cors.allowed-origins:http://localhost:3000}")
+        private String allowedOrigins;
 
         @Bean
         public PasswordEncoder passwordEncoder() {
@@ -52,7 +57,11 @@
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
             CorsConfiguration configuration = new CorsConfiguration();
-            configuration.setAllowedOriginPatterns(List.of("*"));
+            List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                    .map(String::trim)
+                    .filter(origin -> !origin.isEmpty())
+                    .collect(Collectors.toList());
+            configuration.setAllowedOrigins(origins);
             configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             configuration.setAllowedHeaders(List.of("*"));
             configuration.setAllowCredentials(true);
@@ -73,7 +82,7 @@
                             .requestMatchers("/api/v1/safety/**").permitAll()
                             .requestMatchers("/api/v1/sos/send").permitAll()
                             .requestMatchers("/api/v1/routing/**").permitAll()
-                            .requestMatchers("/actuator/**").permitAll()
+                            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                             .requestMatchers("/api/v1/notifications").permitAll()
                             .requestMatchers("/api/v1/incidents/stats").permitAll()
@@ -84,6 +93,8 @@
                             .requestMatchers("/api/v1/rescue/**").hasAnyRole("RESCUE_TEAM", "COMMANDER", "ADMIN")
                             .requestMatchers("/api/commander/**").hasAnyRole("COMMANDER", "ADMIN")
                             .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                            .requestMatchers("/actuator/**").hasRole("ADMIN")
+                            // Tất cả request khác cần authenticated
                             .anyRequest().authenticated()
                     )
                     .authenticationProvider(authenticationProvider())
