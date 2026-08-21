@@ -4,9 +4,11 @@ import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,11 +23,8 @@ public class GlobalExceptionHandler {
         response.setCode(errorCode.getCode());
         response.setMessage(ex.getMessage() != null ? ex.getMessage() : errorCode.getMessage());
 
-        // Nếu là lỗi hệ thống 500 thì trả về 500 thay vì badRequest (400)
-        if (errorCode.getCode() >= 500) {
-            return ResponseEntity.status(errorCode.getCode()).body(response);
-        }
-        return ResponseEntity.badRequest().body(response);
+        // Giữ HTTP status đồng bộ với mã lỗi nghiệp vụ (400, 401, 404, 500).
+        return ResponseEntity.status(errorCode.getCode()).body(response);
     }
 
     // 2. Bắt lỗi người dùng nhập thiếu dữ liệu (@Valid, @NotNull, @NotBlank)
@@ -38,6 +37,17 @@ public class GlobalExceptionHandler {
         response.setCode(ErrorCode.INVALID_DATA.getCode());
         response.setMessage(errorMessage);
 
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler({
+            HttpMessageNotReadableException.class,
+            MethodArgumentTypeMismatchException.class
+    })
+    public ResponseEntity<ApiResponse<Void>> handleMalformedRequest(Exception ex) {
+        ApiResponse<Void> response = new ApiResponse<>();
+        response.setCode(ErrorCode.INVALID_DATA.getCode());
+        response.setMessage("Tọa độ hoặc định dạng yêu cầu không hợp lệ");
         return ResponseEntity.badRequest().body(response);
     }
 
