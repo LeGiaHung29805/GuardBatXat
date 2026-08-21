@@ -5,8 +5,11 @@ import com.example.GuardBatXat.controller.auth.UserController;
 
 import com.example.GuardBatXat.dto.request.auth.UserCreationRequest;
 import com.example.GuardBatXat.dto.request.auth.UserUpdateRequest;
+import com.example.GuardBatXat.dto.request.admin.DemoLocationAssignmentRequest;
 import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
+import com.example.GuardBatXat.dto.response.auth.DemoLocationResponse;
 import com.example.GuardBatXat.dto.response.auth.UserResponse;
+import com.example.GuardBatXat.service.DemoLocationService;
 import com.example.GuardBatXat.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ import java.util.List;
 public class AdminUserController {
 
     private final UserService userService;
+    private final DemoLocationService demoLocationService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
@@ -67,6 +71,29 @@ public class AdminUserController {
                 .code(200)
                 .message("Cập nhật thông tin thành công")
                 .data(userService.updateUser(id, request))
+                .build());
+    }
+
+    @GetMapping("/{id}/demo-location")
+    public ResponseEntity<ApiResponse<DemoLocationResponse>> getDemoLocation(
+            @PathVariable Integer id
+    ) {
+        return ResponseEntity.ok(ApiResponse.<DemoLocationResponse>builder()
+                .code(200)
+                .message("Lấy vị trí trình diễn thành công")
+                .data(demoLocationService.getForUserId(id))
+                .build());
+    }
+
+    @PutMapping("/{id}/demo-location")
+    public ResponseEntity<ApiResponse<DemoLocationResponse>> assignDemoLocation(
+            @PathVariable Integer id,
+            @RequestBody @Valid DemoLocationAssignmentRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.<DemoLocationResponse>builder()
+                .code(200)
+                .message("Đã gán ngôi nhà trình diễn gần nhất")
+                .data(demoLocationService.assignToNearestBuilding(id, request))
                 .build());
     }
 }
