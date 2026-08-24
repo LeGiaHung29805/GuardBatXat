@@ -4,6 +4,7 @@
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Configuration;
+    import org.springframework.http.HttpMethod;
     import org.springframework.security.authentication.AuthenticationManager;
     import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
     import org.springframework.security.config.Customizer;
@@ -78,7 +79,10 @@
                     .authorizeHttpRequests(auth -> auth
                             // PUBLIC endpoints (không cần token)
                             .requestMatchers("/api/v1/auth/**").permitAll()
-                            .requestMatchers("/api/v1/map/**").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/map/heatmap/landslide").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/map/check-safety").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/map/evacuation-route").permitAll()
+                            .requestMatchers(HttpMethod.POST, "/api/v1/map/internal/trigger-broadcast").permitAll()
                             .requestMatchers("/api/v1/safety/**").permitAll()
                             .requestMatchers("/api/v1/sos/send").permitAll()
                             .requestMatchers("/api/v1/routing/**").permitAll()

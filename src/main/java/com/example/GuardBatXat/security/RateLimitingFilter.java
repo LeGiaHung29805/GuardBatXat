@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,9 @@ import java.util.concurrent.TimeUnit;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${batxat.security.rate-limit.trust-forwarded-headers:false}")
+    private boolean trustForwardedHeaders;
 
     // Giới hạn 60 request / 1 phút / 1 IP
     private static final int MAX_REQUESTS_PER_MINUTE = 60;
@@ -58,10 +62,13 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
-        String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null) {
+        if (!trustForwardedHeaders) {
             return request.getRemoteAddr();
         }
-        return xfHeader.split(",")[0];
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null || xfHeader.isBlank()) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",", 2)[0].trim();
     }
 }
