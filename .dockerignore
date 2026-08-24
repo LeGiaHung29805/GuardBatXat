@@ -1,7 +1,6 @@
 .git
 .gitignore
-.mvn
-mvnw
-mvnw.cmd
 .idea/
-src/
+target/
+.env
+*.log
