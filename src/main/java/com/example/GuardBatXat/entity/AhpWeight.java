@@ -2,6 +2,7 @@ package com.example.GuardBatXat.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,23 +16,23 @@ public class AhpWeight {
     @Column(name = "strategy_name", length = 50)
     private String strategyName;
 
-    @Column(name = "w_distance")
-    private Double wDistance;
+    @Column(name = "w_distance", precision = 10, scale = 5)
+    private BigDecimal wDistance;
 
-    @Column(name = "w_flood")
-    private Double wFlood;
+    @Column(name = "w_flood", precision = 10, scale = 5)
+    private BigDecimal wFlood;
 
-    @Column(name = "w_landslide")
-    private Double wLandslide;
+    @Column(name = "w_landslide", precision = 10, scale = 5)
+    private BigDecimal wLandslide;
 
-    @Column(name = "w_capacity")
-    private Double wCapacity;
+    @Column(name = "w_capacity", precision = 10, scale = 5)
+    private BigDecimal wCapacity;
 
-    @Column(name = "w_bridge")
-    private Double wBridge;
+    @Column(name = "w_bridge", precision = 10, scale = 5)
+    private BigDecimal wBridge;
 
-    @Column(name = "w_report")
-    private Double wReport;
+    @Column(name = "w_report", precision = 10, scale = 5)
+    private BigDecimal wReport;
 
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;

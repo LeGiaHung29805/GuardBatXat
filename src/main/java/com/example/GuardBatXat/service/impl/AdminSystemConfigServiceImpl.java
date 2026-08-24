@@ -23,11 +23,16 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
+
+    private static final BigDecimal ZERO = BigDecimal.ZERO;
+    private static final BigDecimal ONE = BigDecimal.ONE;
+    private static final BigDecimal WEIGHT_SUM_TOLERANCE = new BigDecimal("0.001");
 
     private final ModelRegistryRepository modelRegistryRepository;
     private final AhpWeightRepository ahpWeightRepository;
@@ -131,20 +136,20 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
     @Override
     @Transactional
     public AhpWeightResponse updateAhpWeights(String strategyName, AhpWeightRequest request) {
-        double sum = request.getWDistance() + request.getWFlood()
-                + request.getWLandslide() + request.getWCapacity()
-                + request.getWBridge() + request.getWReport();
+        BigDecimal sum = request.getWDistance().add(request.getWFlood())
+                .add(request.getWLandslide()).add(request.getWCapacity())
+                .add(request.getWBridge()).add(request.getWReport());
 
-        if (Math.abs(sum - 1.0) > 0.001) {
+        if (sum.subtract(ONE).abs().compareTo(WEIGHT_SUM_TOLERANCE) > 0) {
             throw new IllegalArgumentException("Tổng 6 trọng số AHP phải bằng 1.0. Hiện tại là: " + sum);
         }
 
-        if (request.getWDistance() < 0 || request.getWDistance() > 1
-                || request.getWFlood() < 0 || request.getWFlood() > 1
-                || request.getWLandslide() < 0 || request.getWLandslide() > 1
-                || request.getWCapacity() < 0 || request.getWCapacity() > 1
-                || request.getWBridge() < 0 || request.getWBridge() > 1
-                || request.getWReport() < 0 || request.getWReport() > 1) {
+        if (isOutsideUnitRange(request.getWDistance())
+                || isOutsideUnitRange(request.getWFlood())
+                || isOutsideUnitRange(request.getWLandslide())
+                || isOutsideUnitRange(request.getWCapacity())
+                || isOutsideUnitRange(request.getWBridge())
+                || isOutsideUnitRange(request.getWReport())) {
             throw new IllegalArgumentException("Mỗi trọng số AHP phải nằm trong khoảng từ 0 đến 1");
         }
 
@@ -167,5 +172,9 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         }
 
         return mapToWeightResponse(savedWeight);
+    }
+
+    private boolean isOutsideUnitRange(BigDecimal value) {
+        return value.compareTo(ZERO) < 0 || value.compareTo(ONE) > 0;
     }
 }

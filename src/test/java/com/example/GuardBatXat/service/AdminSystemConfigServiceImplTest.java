@@ -1,6 +1,8 @@
 package com.example.GuardBatXat.service;
 
 import com.example.GuardBatXat.entity.ModelRegistry;
+import com.example.GuardBatXat.entity.AhpWeight;
+import com.example.GuardBatXat.dto.request.admin.AhpWeightRequest;
 import com.example.GuardBatXat.repository.AhpWeightRepository;
 import com.example.GuardBatXat.repository.ModelRegistryRepository;
 import com.example.GuardBatXat.service.impl.AdminSystemConfigServiceImpl;
@@ -16,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -84,5 +87,27 @@ class AdminSystemConfigServiceImplTest {
         verify(modelRegistryRepository).deactivateAllModelsByTarget("FLOOD");
         verify(modelRegistryRepository).save(floodModel);
         assertEquals(true, floodModel.getIsActive());
+    }
+
+    @Test
+    void persistsExactDecimalAhpWeights() {
+        AhpWeight weight = new AhpWeight();
+        weight.setStrategyName("safety");
+        AhpWeightRequest request = AhpWeightRequest.builder()
+                .wDistance(new BigDecimal("0.20000"))
+                .wFlood(new BigDecimal("0.20000"))
+                .wLandslide(new BigDecimal("0.20000"))
+                .wCapacity(new BigDecimal("0.15000"))
+                .wBridge(new BigDecimal("0.10000"))
+                .wReport(new BigDecimal("0.15000"))
+                .build();
+
+        when(ahpWeightRepository.findById("safety")).thenReturn(Optional.of(weight));
+        when(ahpWeightRepository.save(weight)).thenReturn(weight);
+
+        service.updateAhpWeights("safety", request);
+
+        assertEquals(new BigDecimal("0.20000"), weight.getWDistance());
+        assertEquals(new BigDecimal("0.15000"), weight.getWReport());
     }
 }
