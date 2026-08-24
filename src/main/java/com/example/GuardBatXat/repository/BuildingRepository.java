@@ -1,6 +1,7 @@
 package com.example.GuardBatXat.repository;
 
 import com.example.GuardBatXat.entity.Building;
+import com.example.GuardBatXat.repository.projection.BuildingLocationView;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,11 +24,29 @@ public interface BuildingRepository extends JpaRepository<Building, Long> {
     Page<Building> findAdminPage(@Param("search") String search, Pageable pageable);
 
     @Query(value = """
-        SELECT * FROM batxat_buildings b 
-        ORDER BY b.geom <-> ST_SetSRID(ST_MakePoint(:lng, :lat), 4326) 
+        SELECT b.id AS "buildingId",
+               CAST(ST_Y(ST_PointOnSurface(b.geom)) AS double precision) AS latitude,
+               CAST(ST_X(ST_PointOnSurface(b.geom)) AS double precision) AS longitude
+        FROM batxat_buildings b
+        WHERE b.geom IS NOT NULL
+          AND NOT ST_IsEmpty(b.geom)
+        ORDER BY b.geom <-> ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)
         LIMIT 1
         """, nativeQuery = true)
-    Optional<Building> findNearestBuilding(@Param("lng") Double lng, @Param("lat") Double lat);
+    Optional<BuildingLocationView> findNearestLocation(
+            @Param("lng") Double lng,
+            @Param("lat") Double lat
+    );
+
+    @Query(value = """
+        SELECT b.id AS "buildingId",
+               CAST(ST_Y(ST_PointOnSurface(b.geom)) AS double precision) AS latitude,
+               CAST(ST_X(ST_PointOnSurface(b.geom)) AS double precision) AS longitude
+        FROM batxat_buildings b
+        WHERE b.id = :id
+          AND b.geom IS NOT NULL
+        """, nativeQuery = true)
+    Optional<BuildingLocationView> findLocationById(@Param("id") Long id);
 
     @Modifying
     @Query(value = """

@@ -30,12 +30,15 @@ spring:
       host: ${SPRING_REDIS_HOST:localhost}
       port: ${SPRING_REDIS_PORT:6379}
       database: 0
+      repositories:
+        enabled: false
 
 batxat:
   security:
     jwt:
       secret: ${JWT_SECRET}
       expiration: 86400000
+      demo-expiration: ${JWT_DEMO_EXPIRATION:14400000}
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   ai:
