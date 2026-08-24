@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -36,6 +37,7 @@ class AdminSystemConfigServiceImplTest {
     @Mock private AhpWeightRepository ahpWeightRepository;
     @Mock private NotificationSender notificationSender;
     @Mock private RestTemplate restTemplate;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     private AdminSystemConfigServiceImpl service;
     private ModelRegistry floodModel;
@@ -46,7 +48,8 @@ class AdminSystemConfigServiceImplTest {
                 modelRegistryRepository,
                 ahpWeightRepository,
                 notificationSender,
-                restTemplate
+                restTemplate,
+                eventPublisher
         );
         ReflectionTestUtils.setField(service, "aiServiceBaseUrl", "http://localhost:5000");
 
@@ -109,5 +112,6 @@ class AdminSystemConfigServiceImplTest {
 
         assertEquals(new BigDecimal("0.20000"), weight.getWDistance());
         assertEquals(new BigDecimal("0.15000"), weight.getWReport());
+        verify(eventPublisher).publishEvent(any(com.example.GuardBatXat.event.AhpWeightsUpdatedEvent.class));
     }
 }

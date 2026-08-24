@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.service.impl;
 import com.example.GuardBatXat.entity.Notification;
-
+import com.example.GuardBatXat.event.AhpWeightsUpdatedEvent;
 import com.example.GuardBatXat.dto.request.admin.AhpWeightRequest;
 import com.example.GuardBatXat.dto.response.admin.AhpWeightResponse;
 import com.example.GuardBatXat.dto.response.admin.ModelRegistryResponse;
@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -38,6 +39,7 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
     private final AhpWeightRepository ahpWeightRepository;
     private final NotificationSender notificationSender;
     private final RestTemplate restTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${batxat.ai.service.base-url:http://localhost:5000}")
     private String aiServiceBaseUrl;
@@ -170,6 +172,7 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        eventPublisher.publishEvent(new AhpWeightsUpdatedEvent(strategyName));
 
         return mapToWeightResponse(savedWeight);
     }
