@@ -1,10 +1,6 @@
 package com.example.GuardBatXat.controller.admin;
-import com.example.GuardBatXat.entity.User;
-import com.example.GuardBatXat.entity.Role;
-import com.example.GuardBatXat.controller.auth.UserController;
-
-import com.example.GuardBatXat.dto.request.auth.UserCreationRequest;
-import com.example.GuardBatXat.dto.request.auth.UserUpdateRequest;
+import com.example.GuardBatXat.dto.request.admin.AdminUserCreateRequest;
+import com.example.GuardBatXat.dto.request.admin.AdminUserUpdateRequest;
 import com.example.GuardBatXat.dto.request.admin.DemoLocationAssignmentRequest;
 import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import com.example.GuardBatXat.dto.response.auth.DemoLocationResponse;
@@ -38,11 +34,11 @@ public class AdminUserController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid UserCreationRequest request) {
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(@RequestBody @Valid AdminUserCreateRequest request) {
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
                 .code(200)
                 .message("Tạo tài khoản thành công")
-                .data(userService.createUser(request))
+                .data(userService.createAdminUser(request))
                 .build());
     }
 
@@ -66,11 +62,11 @@ public class AdminUserController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Integer id,
-            @RequestBody UserUpdateRequest request) {
+            @RequestBody @Valid AdminUserUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
                 .code(200)
                 .message("Cập nhật thông tin thành công")
-                .data(userService.updateUser(id, request))
+                .data(userService.updateAdminUser(id, request))
                 .build());
     }
 

@@ -1,6 +1,8 @@
 package com.example.GuardBatXat.service;
 
 import com.example.GuardBatXat.dto.request.auth.UserCreationRequest;
+import com.example.GuardBatXat.dto.request.admin.AdminUserCreateRequest;
+import com.example.GuardBatXat.dto.request.admin.AdminUserUpdateRequest;
 import com.example.GuardBatXat.dto.response.auth.UserResponse;
 import com.example.GuardBatXat.entity.Role;
 import com.example.GuardBatXat.entity.User;
@@ -90,6 +92,68 @@ class UserServiceImplTest {
 
         assertThrows(IllegalArgumentException.class, () -> service.createUser(request));
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void adminCreationPersistsTheDedicatedAdminPayload() {
+        Role rescueTeam = new Role(2, "RESCUE_TEAM", null);
+        AdminUserCreateRequest request = new AdminUserCreateRequest();
+        request.setUsername("rescue01");
+        request.setPassword("secret123");
+        request.setFullName("Đội cứu hộ 01");
+        request.setEmail("rescue01@example.com");
+        request.setPhoneNumber("0912345678");
+        request.setRoleName("RESCUE_TEAM");
+        request.setAssignedStation("ST01");
+
+        when(roleRepository.findByRoleName("RESCUE_TEAM")).thenReturn(Optional.of(rescueTeam));
+        when(weatherStationRepository.existsById("ST01")).thenReturn(true);
+        when(passwordEncoder.encode("secret123")).thenReturn("encoded");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userMapper.toUserResponse(any(User.class))).thenReturn(new UserResponse());
+
+        service.createAdminUser(request);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+        User savedUser = userCaptor.getValue();
+        assertEquals("rescue01", savedUser.getUsername());
+        assertEquals("rescue01@example.com", savedUser.getEmail());
+        assertEquals("0912345678", savedUser.getPhoneNumber());
+        assertEquals("ST01", savedUser.getAssignedStation());
+        assertEquals("RESCUE_TEAM", savedUser.getRole().getRoleName());
+    }
+
+    @Test
+    void adminUpdateCanClearStationAndOptionalEmail() {
+        Role rescueTeam = new Role(2, "RESCUE_TEAM", null);
+        User user = new User();
+        user.setUserId(10);
+        user.setFullName("Tên cũ");
+        user.setEmail("old@example.com");
+        user.setPhoneNumber("0911111111");
+        user.setAssignedStation("ST01");
+        user.setRole(rescueTeam);
+
+        AdminUserUpdateRequest request = new AdminUserUpdateRequest();
+        request.setFullName("Tên mới");
+        request.setEmail("");
+        request.setPhoneNumber("0922222222");
+        request.setRoleName("RESCUE_TEAM");
+        request.setAssignedStation(null);
+
+        when(userRepository.findById(10)).thenReturn(Optional.of(user));
+        when(roleRepository.findByRoleName("RESCUE_TEAM")).thenReturn(Optional.of(rescueTeam));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userMapper.toUserResponse(any(User.class))).thenReturn(new UserResponse());
+
+        service.updateAdminUser(10, request);
+
+        assertEquals("Tên mới", user.getFullName());
+        assertEquals(null, user.getEmail());
+        assertEquals("0922222222", user.getPhoneNumber());
+        assertEquals(null, user.getAssignedStation());
+        verify(passwordEncoder, never()).encode(any());
     }
 
     @Test
