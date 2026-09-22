@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,25 +18,25 @@ public class AhpWeightRequest {
 
     @NotNull(message = "wDistance không được để trống")
     @JsonProperty("wDistance")
-    private Double wDistance;
+    private BigDecimal wDistance;
 
     @NotNull(message = "wFlood không được để trống")
     @JsonProperty("wFlood")
-    private Double wFlood;
+    private BigDecimal wFlood;
 
     @NotNull(message = "wLandslide không được để trống")
     @JsonProperty("wLandslide")
-    private Double wLandslide;
+    private BigDecimal wLandslide;
 
     @NotNull(message = "wCapacity không được để trống")
     @JsonProperty("wCapacity")
-    private Double wCapacity;
+    private BigDecimal wCapacity;
 
     @NotNull(message = "wBridge không được để trống")
     @JsonProperty("wBridge")
-    private Double wBridge;
+    private BigDecimal wBridge;
 
     @NotNull(message = "wReport không được để trống")
     @JsonProperty("wReport")
-    private Double wReport;
+    private BigDecimal wReport;
 }

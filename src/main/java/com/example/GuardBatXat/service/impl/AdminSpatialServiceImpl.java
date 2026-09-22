@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -77,23 +79,23 @@ public class AdminSpatialServiceImpl implements AdminSpatialService {
         }
     }
     @Override
-    @Cacheable(value = "roadEdges", key = "'all'")
-    public List<RoadEdgeListDto> getAllRoadEdgesOptimized() {
-        return roadEdgeRepository.findAllOptimizedForAdmin();
+    public Page<RoadEdgeListDto> getRoadEdges(String search, Pageable pageable) {
+        return roadEdgeRepository.findAdminPage(normalizeSearch(search), pageable);
     }
 
     @Override
-    @Cacheable(value = "buildings", key = "'all'")
-    public List<Map<String, Object>> getAllBuildings() {
-        List<Map<String, Object>> safeData = new ArrayList<>();
-        buildingRepository.findAll().forEach(b -> {
+    public Page<Map<String, Object>> getBuildings(String search, Pageable pageable) {
+        return buildingRepository.findAdminPage(normalizeSearch(search), pageable).map(b -> {
             Map<String, Object> map = new HashMap<>();
             map.put("id", b.getId());
             map.put("buildingType", b.getBuildingType());
             map.put("areaInMeters", b.getAreaInMeters());
             map.put("maxCapacity", b.getMaxCapacity());
-            safeData.add(map);
+            return map;
         });
-        return safeData;
+    }
+
+    private String normalizeSearch(String search) {
+        return search == null ? "" : search.trim();
     }
 }

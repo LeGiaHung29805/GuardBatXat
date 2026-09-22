@@ -1,9 +1,11 @@
 package com.example.GuardBatXat.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +21,12 @@ public class AdminHealthCheckController {
 
     @Autowired
     private JdbcTemplate jdbcTemplate; // Dùng để test kết nối PostGIS
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${batxat.ai.service.base-url:http://localhost:5000}")
+    private String aiServiceBaseUrl;
 
     @GetMapping("/health")
     public ResponseEntity<?> getSystemHealth() {
@@ -36,7 +44,15 @@ public class AdminHealthCheckController {
         }
 
         // 3. Check AI Engine (Ping thử sang Flask/FastAPI của Python qua RestTemplate)
-        data.put("ai", "idle");
+        try {
+            Map<?, ?> aiHealth = restTemplate.getForObject(
+                    aiServiceBaseUrl + "/api/v1/health",
+                    Map.class
+            );
+            data.put("ai", aiHealth != null && "ok".equals(aiHealth.get("status")) ? "ok" : "error");
+        } catch (Exception exception) {
+            data.put("ai", "error");
+        }
 
         // Gói lại thành format ApiResponse chung của hệ thống
         Map<String, Object> response = new HashMap<>();

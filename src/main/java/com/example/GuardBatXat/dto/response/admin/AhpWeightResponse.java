@@ -6,16 +6,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AhpWeightResponse {
     private String strategyName;
-    private Double wDistance;
-    private Double wFlood;
-    private Double wLandslide;
-    private Double wCapacity;
-    private Double wBridge;
-    private Double wReport;
+    private BigDecimal wDistance;
+    private BigDecimal wFlood;
+    private BigDecimal wLandslide;
+    private BigDecimal wCapacity;
+    private BigDecimal wBridge;
+    private BigDecimal wReport;
 }

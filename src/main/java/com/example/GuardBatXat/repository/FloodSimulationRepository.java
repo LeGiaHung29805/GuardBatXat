@@ -2,6 +2,7 @@ package com.example.GuardBatXat.repository;
 
 import com.example.GuardBatXat.dto.response.commander.FloodStatisticDto;
 import com.example.GuardBatXat.entity.FloodSimulation;
+import com.example.GuardBatXat.repository.projection.FloodSimulationMapPoint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -26,7 +27,20 @@ public interface FloodSimulationRepository extends JpaRepository<FloodSimulation
             @Param("waterLevel") Double waterLevel
     );
 
-    List<FloodSimulation> findBySimulationId(UUID simulationId);
+    @Query(value = """
+        SELECT fs.building_id AS "buildingId",
+               fs.depth_impact AS "depth",
+               fs.risk_status AS "status",
+               CAST(ST_X(ST_PointOnSurface(b.geom)) AS double precision) AS "lng",
+               CAST(ST_Y(ST_PointOnSurface(b.geom)) AS double precision) AS "lat"
+        FROM batxat_flood_simulation fs
+        JOIN batxat_buildings b ON b.id = fs.building_id
+        WHERE fs.simulation_id = :simulationId
+        ORDER BY fs.id
+        """, nativeQuery = true)
+    List<FloodSimulationMapPoint> findMapPointsBySimulationId(
+            @Param("simulationId") UUID simulationId
+    );
 
     @Query("SELECT DISTINCT f.inputLevel FROM FloodSimulation f ORDER BY f.inputLevel ASC")
     List<Double> findAllSimulatedLevels();

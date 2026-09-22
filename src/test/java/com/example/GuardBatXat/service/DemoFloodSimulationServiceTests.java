@@ -1,6 +1,7 @@
 package com.example.GuardBatXat.service;
 
 import com.example.GuardBatXat.dto.response.commander.FloodSimulationResponse;
+import com.example.GuardBatXat.dto.response.commander.FloodSimulationRunResponse;
 import com.example.GuardBatXat.websocket.NotificationSender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,12 @@ class DemoFloodSimulationServiceTests {
                 "nguoi_can_so_tan", 4,
                 "duong_bi_chan", 2
         );
-        when(floodSimulationService.runSimulation(83.5)).thenReturn(List.of(impact));
+        when(floodSimulationService.runSimulation(83.5)).thenReturn(
+                FloodSimulationRunResponse.builder()
+                        .simulationId("sim-1")
+                        .results(List.of(impact))
+                        .build()
+        );
         when(commanderDashboardService.getDashboardStats(83.5)).thenReturn(stats);
         when(demoCitizenSnapshotService.publish(any(), eq(stats), any()))
                 .thenReturn(Map.of("revision", 123L));

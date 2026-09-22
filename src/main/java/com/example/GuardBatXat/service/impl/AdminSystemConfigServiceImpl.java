@@ -1,6 +1,6 @@
 package com.example.GuardBatXat.service.impl;
 import com.example.GuardBatXat.entity.Notification;
-
+import com.example.GuardBatXat.event.AhpWeightsUpdatedEvent;
 import com.example.GuardBatXat.dto.request.admin.AhpWeightRequest;
 import com.example.GuardBatXat.dto.response.admin.AhpWeightResponse;
 import com.example.GuardBatXat.dto.response.admin.ModelRegistryResponse;
@@ -11,21 +11,38 @@ import com.example.GuardBatXat.repository.ModelRegistryRepository;
 import com.example.GuardBatXat.service.AdminSystemConfigService;
 import com.example.GuardBatXat.websocket.NotificationSender;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.math.BigDecimal;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
 
+    private static final BigDecimal ZERO = BigDecimal.ZERO;
+    private static final BigDecimal ONE = BigDecimal.ONE;
+    private static final BigDecimal WEIGHT_SUM_TOLERANCE = new BigDecimal("0.001");
+
     private final ModelRegistryRepository modelRegistryRepository;
     private final AhpWeightRepository ahpWeightRepository;
     private final NotificationSender notificationSender;
+    private final RestTemplate restTemplate;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Value("${batxat.ai.service.base-url:http://localhost:5000}")
+    private String aiServiceBaseUrl;
 
     private ModelRegistryResponse mapToModelResponse(ModelRegistry entity) {
         return ModelRegistryResponse.builder()
@@ -66,6 +83,8 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
 
         String target = targetModel.getModelTarget();
 
+        validateModelWithAiService(targetModel);
+
         // Bước 1: Tắt tất cả các model đang chạy cùng loại
         modelRegistryRepository.deactivateAllModelsByTarget(target);
 
@@ -84,6 +103,31 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         return mapToModelResponse(savedModel);
     }
 
+    private void validateModelWithAiService(ModelRegistry model) {
+        Map<String, String> request = new HashMap<>();
+        request.put("modelTarget", model.getModelTarget());
+        request.put("modelPath", model.getModelPath());
+        request.put("scalerPath", model.getScalerPath());
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> response = restTemplate.postForObject(
+                    aiServiceBaseUrl + "/api/v1/ai/models/validate",
+                    request,
+                    Map.class
+            );
+            if (response == null || !Boolean.TRUE.equals(response.get("valid"))) {
+                throw new IllegalStateException("AI service không xác nhận được model");
+            }
+        } catch (Exception exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Không thể kích hoạt model vì file/model scaler chưa hợp lệ",
+                    exception
+            );
+        }
+    }
+
         @Override
     public AhpWeightResponse getAhpWeights(String strategyName) {
         AhpWeight weight = ahpWeightRepository.findById(strategyName)
@@ -94,12 +138,21 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
     @Override
     @Transactional
     public AhpWeightResponse updateAhpWeights(String strategyName, AhpWeightRequest request) {
-        double sum = request.getWDistance() + request.getWFlood()
-                + request.getWLandslide() + request.getWCapacity()
-                + request.getWBridge() + request.getWReport();
+        BigDecimal sum = request.getWDistance().add(request.getWFlood())
+                .add(request.getWLandslide()).add(request.getWCapacity())
+                .add(request.getWBridge()).add(request.getWReport());
 
-        if (Math.abs(sum - 1.0) > 0.001) {
-            throw new RuntimeException("Tổng 6 trọng số AHP phải chính xác bằng 1.0. Hiện tại đang là: " + sum);
+        if (sum.subtract(ONE).abs().compareTo(WEIGHT_SUM_TOLERANCE) > 0) {
+            throw new IllegalArgumentException("Tổng 6 trọng số AHP phải bằng 1.0. Hiện tại là: " + sum);
+        }
+
+        if (isOutsideUnitRange(request.getWDistance())
+                || isOutsideUnitRange(request.getWFlood())
+                || isOutsideUnitRange(request.getWLandslide())
+                || isOutsideUnitRange(request.getWCapacity())
+                || isOutsideUnitRange(request.getWBridge())
+                || isOutsideUnitRange(request.getWReport())) {
+            throw new IllegalArgumentException("Mỗi trọng số AHP phải nằm trong khoảng từ 0 đến 1");
         }
 
         AhpWeight weight = ahpWeightRepository.findById(strategyName)
@@ -119,7 +172,12 @@ public class AdminSystemConfigServiceImpl implements AdminSystemConfigService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        eventPublisher.publishEvent(new AhpWeightsUpdatedEvent(strategyName));
 
         return mapToWeightResponse(savedWeight);
+    }
+
+    private boolean isOutsideUnitRange(BigDecimal value) {
+        return value.compareTo(ZERO) < 0 || value.compareTo(ONE) > 0;
     }
 }

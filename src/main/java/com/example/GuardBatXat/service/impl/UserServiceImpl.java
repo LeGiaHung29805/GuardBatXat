@@ -2,6 +2,8 @@ package com.example.GuardBatXat.service.impl;
 
 import com.example.GuardBatXat.dto.request.auth.UserCreationRequest;
 import com.example.GuardBatXat.dto.request.auth.UserProfileRequest;
+import com.example.GuardBatXat.dto.request.admin.AdminUserCreateRequest;
+import com.example.GuardBatXat.dto.request.admin.AdminUserUpdateRequest;
 import com.example.GuardBatXat.dto.response.auth.UserProfileResponse;
 import com.example.GuardBatXat.dto.response.auth.UserResponse;
 import com.example.GuardBatXat.entity.Role;
@@ -13,6 +15,7 @@ import com.example.GuardBatXat.entity.Building;
 import com.example.GuardBatXat.repository.BuildingRepository;
 import com.example.GuardBatXat.repository.RoleRepository;
 import com.example.GuardBatXat.repository.UserRepository;
+import com.example.GuardBatXat.repository.WeatherStationRepository;
 import com.example.GuardBatXat.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,11 +27,17 @@ import org.springframework.cache.annotation.CacheEvict;
 import com.example.GuardBatXat.exception.AppException;
 import com.example.GuardBatXat.exception.ErrorCode;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
+
+    private static final Set<String> ALLOWED_ROLES = Set.of(
+            "CITIZEN", "RESCUE_TEAM", "COMMANDER", "ADMIN"
+    );
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -36,6 +45,7 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final UserProfileMapper userProfileMapper;
     private final BuildingRepository buildingRepository;
+    private final WeatherStationRepository weatherStationRepository;
     @Override
     @Cacheable(value = "users", key = "'all'")
     public List<UserResponse> getAllUsers() {
@@ -47,7 +57,55 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     @CacheEvict(value = "users", allEntries = true)
+    public UserResponse registerCitizen(UserCreationRequest request) {
+        return createUserWithRole(request, "CITIZEN", null);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "users", allEntries = true)
     public UserResponse createUser(UserCreationRequest request) {
+        String roleToAssign = normalizeRoleName(request.getRoleName());
+        return createUserWithRole(request, roleToAssign, request.getAssignedStation());
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "users", allEntries = true)
+    public UserResponse createAdminUser(AdminUserCreateRequest request) {
+        String username = request.getUsername().trim();
+        String email = normalizeOptionalValue(request.getEmail());
+        String phoneNumber = request.getPhoneNumber().trim();
+
+        if (userRepository.existsByUsername(username)) {
+            throw new IllegalArgumentException("Tên đăng nhập này đã tồn tại trong hệ thống");
+        }
+        if (email != null && userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email này đã được sử dụng");
+        }
+        if (userRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new IllegalArgumentException("Số điện thoại này đã được sử dụng");
+        }
+
+        Role role = findRole(normalizeRoleName(request.getRoleName()));
+        User user = new User();
+        user.setUsername(username);
+        user.setFullName(request.getFullName().trim());
+        user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setIsActive(true);
+        user.setRole(role);
+        user.setAssignedStation(validateAssignedStation(request.getAssignedStation()));
+
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    private UserResponse createUserWithRole(
+            UserCreationRequest request,
+            String roleName,
+            String assignedStation
+    ) {
         String input = request.getEmailOrPhone().trim();
 
         boolean isEmail = input.matches("^[A-Za-z0-9+_.-]+@(.+)$");
@@ -67,9 +125,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Số điện thoại này đã được sử dụng!");
         }
 
-        String roleToAssign = (request.getRoleName() != null) ? request.getRoleName() : "CITIZEN";
-        Role role = roleRepository.findByRoleName(roleToAssign)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy quyền: " + roleToAssign));
+        Role role = findRole(roleName);
 
         User user = new User();
         user.setUsername(input);
@@ -84,9 +140,43 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setIsActive(true);
         user.setRole(role);
-        user.setAssignedStation(request.getAssignedStation());
+        user.setAssignedStation(validateAssignedStation(assignedStation));
 
         return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    private String normalizeRoleName(String requestedRole) {
+        String roleName = requestedRole == null || requestedRole.isBlank()
+                ? "CITIZEN"
+                : requestedRole.trim().toUpperCase(Locale.ROOT);
+
+        if (!ALLOWED_ROLES.contains(roleName)) {
+            throw new IllegalArgumentException("Vai trò không hợp lệ: " + requestedRole);
+        }
+        return roleName;
+    }
+
+    private String validateAssignedStation(String assignedStation) {
+        if (assignedStation == null || assignedStation.isBlank()) {
+            return null;
+        }
+        String stationCode = assignedStation.trim();
+        if (!weatherStationRepository.existsById(stationCode)) {
+            throw new IllegalArgumentException("Mã trạm được phân công không tồn tại: " + stationCode);
+        }
+        return stationCode;
+    }
+
+    private String normalizeOptionalValue(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private Role findRole(String roleName) {
+        return roleRepository.findByRoleName(roleName)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quyền: " + roleName));
     }
 
     @Override
@@ -110,6 +200,12 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Integer userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+
+        if (user.getRole() != null
+                && "ADMIN".equals(user.getRole().getRoleName())
+                && userRepository.countByRoleRoleName("ADMIN") <= 1) {
+            throw new IllegalStateException("Không thể xóa quản trị viên cuối cùng");
+        }
         userRepository.delete(user);
     }
 
@@ -123,7 +219,9 @@ public class UserServiceImpl implements UserService {
         // Cập nhật từng trường nếu có dữ liệu gửi lên
         if (request.getFullName() != null) user.setFullName(request.getFullName());
         if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
-        if (request.getAssignedStation() != null) user.setAssignedStation(request.getAssignedStation());
+        if (request.getAssignedStation() != null) {
+            user.setAssignedStation(validateAssignedStation(request.getAssignedStation()));
+        }
         if (request.getDefaultBuildingId() != null) {
             Building building = buildingRepository.findById(request.getDefaultBuildingId())
                     .orElseThrow(() -> new AppException(ErrorCode.RECORD_NOT_FOUND));
@@ -135,13 +233,56 @@ public class UserServiceImpl implements UserService {
 
         // Đổi quyền (Role)
         if (request.getRoleName() != null) {
-            Role role = roleRepository.findByRoleName(request.getRoleName())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy quyền: " + request.getRoleName()));
+            String roleName = normalizeRoleName(request.getRoleName());
+            if (user.getRole() != null
+                    && "ADMIN".equals(user.getRole().getRoleName())
+                    && !"ADMIN".equals(roleName)
+                    && userRepository.countByRoleRoleName("ADMIN") <= 1) {
+                throw new IllegalStateException("Không thể đổi quyền quản trị viên cuối cùng");
+            }
+            Role role = findRole(roleName);
             user.setRole(role);
         }
 
         // Đổi mật khẩu (nếu có điền) -> Băm lại mật khẩu mới
         if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        }
+
+        return userMapper.toUserResponse(userRepository.save(user));
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "users", allEntries = true)
+    public UserResponse updateAdminUser(Integer userId, AdminUserUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+
+        String email = normalizeOptionalValue(request.getEmail());
+        String phoneNumber = request.getPhoneNumber().trim();
+        if (email != null && !email.equals(user.getEmail()) && userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email này đã được sử dụng");
+        }
+        if (!phoneNumber.equals(user.getPhoneNumber()) && userRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new IllegalArgumentException("Số điện thoại này đã được sử dụng");
+        }
+
+        String roleName = normalizeRoleName(request.getRoleName());
+        if (user.getRole() != null
+                && "ADMIN".equals(user.getRole().getRoleName())
+                && !"ADMIN".equals(roleName)
+                && userRepository.countByRoleRoleName("ADMIN") <= 1) {
+            throw new IllegalStateException("Không thể đổi quyền quản trị viên cuối cùng");
+        }
+
+        user.setFullName(request.getFullName().trim());
+        user.setEmail(email);
+        user.setPhoneNumber(phoneNumber);
+        user.setAssignedStation(validateAssignedStation(request.getAssignedStation()));
+        user.setRole(findRole(roleName));
+
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         }
 

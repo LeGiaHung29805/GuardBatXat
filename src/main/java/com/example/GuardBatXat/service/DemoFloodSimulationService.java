@@ -62,7 +62,7 @@ public class DemoFloodSimulationService {
             }
 
             double waterLevel = number.doubleValue();
-            List<FloodSimulationResponse> impacts = floodSimulationService.runSimulation(waterLevel);
+            List<FloodSimulationResponse> impacts = floodSimulationService.runSimulation(waterLevel).getResults();
             Map<String, Object> stats = commanderDashboardService.getDashboardStats(waterLevel);
 
             Map<String, Object> simulation = new LinkedHashMap<>();
@@ -99,7 +99,7 @@ public class DemoFloodSimulationService {
             throw new IllegalArgumentException("Cao độ mô phỏng không hợp lệ");
         }
 
-        List<FloodSimulationResponse> impacts = floodSimulationService.runSimulation(waterLevel);
+        List<FloodSimulationResponse> impacts = floodSimulationService.runSimulation(waterLevel).getResults();
         Map<String, Object> stats = commanderDashboardService.getDashboardStats(waterLevel);
 
         Map<String, Object> scenario = new LinkedHashMap<>();

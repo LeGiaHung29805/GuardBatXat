@@ -56,8 +56,7 @@ public class AuthController {
 
         // Đăng ký công khai luôn là Citizen. Quyền đặc biệt chỉ do Admin cấp.
         request.setRoleName("CITIZEN");
-
-        UserResponse newUser = userService.createUser(request);
+        UserResponse newUser = userService.registerCitizen(request);
 
         return ResponseEntity.ok(ApiResponse.<UserResponse>builder()
                 .code(200)

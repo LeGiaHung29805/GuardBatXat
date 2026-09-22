@@ -3,6 +3,8 @@ package com.example.GuardBatXat.repository;
 import com.example.GuardBatXat.entity.Building;
 import com.example.GuardBatXat.repository.projection.BuildingLocationView;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,14 @@ import java.util.Optional;
 
 @Repository
 public interface BuildingRepository extends JpaRepository<Building, Long> {
+
+    @Query("""
+        SELECT b FROM Building b
+        WHERE :search = ''
+           OR CAST(b.id AS string) LIKE CONCAT('%', :search, '%')
+           OR LOWER(COALESCE(b.buildingType, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        """)
+    Page<Building> findAdminPage(@Param("search") String search, Pageable pageable);
 
     @Query(value = """
         SELECT b.id AS "buildingId",
