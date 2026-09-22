@@ -24,4 +24,9 @@ public class RoutingRequest {
     @NotNull(message = "Kinh độ điểm kết thúc (endLng) không được để trống")
     private Double endLng;
     private String strategyName;
+    private Boolean demoMode;
+    private Long demoRevision;
+    private Double demoFloodLevel;
+    private Double demoEffectiveRainfallMm;
+    private Double demoSoilSaturationPct;
 }

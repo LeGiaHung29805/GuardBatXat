@@ -28,6 +28,11 @@ spring:
         enabled: false
 
 batxat:
+  internal:
+    callback-token: ${BACKEND_CALLBACK_TOKEN:}
+  risk:
+    outbox-delay-ms: ${RISK_OUTBOX_DELAY_MS:1000}
+    demo-ttl-minutes: ${DEMO_RISK_TTL_MINUTES:240}
   security:
     jwt:
       secret: ${JWT_SECRET:your_jwt_secret_key_here}

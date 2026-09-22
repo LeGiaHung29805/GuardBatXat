@@ -37,11 +37,16 @@ public class FloodSimulationServiceImpl implements FloodSimulationService {
 
         // 4. Map dữ liệu sang DTO, đồng thời chiết xuất tọa độ (X, Y) từ MultiPolygon
         List<FloodSimulationResponse> responseList = results.stream().map(sim -> FloodSimulationResponse.builder()
+                .simulationId(simId)
                 .buildingId(sim.getBuilding().getId())
                 .depth(sim.getDepthImpact())
                 .status(sim.getRiskStatus())
                 .lng(sim.getBuilding().getGeom().getCentroid().getX())
                 .lat(sim.getBuilding().getGeom().getCentroid().getY())
+                .area(sim.getBuilding().getAreaInMeters())
+                .population(sim.getBuilding().getEstimatedPop() != null
+                        ? sim.getBuilding().getEstimatedPop()
+                        : (sim.getBuilding().getMaxCapacity() != null ? sim.getBuilding().getMaxCapacity() : 0))
                 .build()
         ).collect(Collectors.toList());
 

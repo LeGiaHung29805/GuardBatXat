@@ -9,6 +9,7 @@ import com.example.GuardBatXat.dto.response.rescue.RoutingCompareResponse;
 import com.example.GuardBatXat.dto.response.rescue.RoutingResponse;
 import com.example.GuardBatXat.repository.RoadNodeRepository;
 import com.example.GuardBatXat.service.RoutingService;
+import com.example.GuardBatXat.service.DemoCitizenSnapshotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Slf4j
 @Service
@@ -31,6 +33,7 @@ public class RoutingServiceImpl implements RoutingService {
     private final RoadNodeRepository roadNodeRepository;
     private final com.example.GuardBatXat.websocket.NotificationSender notificationSender;
     private final RestTemplate restTemplate;
+    private final DemoCitizenSnapshotService demoCitizenSnapshotService;
 
     private String getPythonAiUrl() {
         return aiServiceBaseUrl + "/api/v1/ai/safe-routing";
@@ -47,6 +50,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Override
     public Object getSafeRouteFromAI(RoutingRequest request) {
         try {
+            attachActiveDemoContext(request);
             log.info("Đang gọi AI Python tìm đường tại: {}", getPythonAiUrl());
             try {
                 notificationSender.sendSystemNotification("/topic/task-progress", "Đang khởi tạo thuật toán AI tìm đường đi an toàn...");
@@ -184,6 +188,7 @@ public class RoutingServiceImpl implements RoutingService {
     @Override
     public Object compareSafetyRoutes(RoutingRequest request) {
         try {
+            attachActiveDemoContext(request);
             log.info("Đang gọi AI Python tìm 3 tuyến đường an toàn tại: {}", getPythonCompareSafetyUrl());
             try {
                 notificationSender.sendSystemNotification("/topic/task-progress", "Đang khởi tạo thuật toán AI đối chiếu 3 lộ trình an toàn nhất...");
@@ -212,11 +217,21 @@ public class RoutingServiceImpl implements RoutingService {
                             }
                         }
                         Double cost = Double.valueOf(routeMap.get("total_mcdm_cost").toString());
+                        Object rawDistance = routeMap.get("distance_m");
+                        Double distance = rawDistance instanceof Number number
+                                ? number.doubleValue()
+                                : cost;
 
-                        processedRoutes.add(Map.of(
-                            "pathPoints", pathPoints,
-                            "totalDistance", cost
-                        ));
+                        Map<String, Object> processed = new LinkedHashMap<>();
+                        processed.put("pathPoints", pathPoints);
+                        processed.put("totalDistance", distance);
+                        processed.put("mcdmCost", cost);
+                        processed.put("strategy", routeMap.get("strategy"));
+                        processed.put("riskSegments", routeMap.getOrDefault("risk_segments", List.of()));
+                        processed.put("riskSummary", routeMap.getOrDefault("risk_summary", Map.of()));
+                        processed.put("demoMode", Boolean.TRUE.equals(body.get("demo_mode")));
+                        processed.put("demoRevision", body.get("demo_revision"));
+                        processedRoutes.add(processed);
                     }
                 }
 
@@ -227,5 +242,25 @@ public class RoutingServiceImpl implements RoutingService {
             log.error("Lỗi khi kết nối với module AI Python compare-safety: {}", e.getMessage());
             throw new RuntimeException("Hệ thống AI đối chiếu lộ trình đang bảo trì hoặc mất kết nối!");
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void attachActiveDemoContext(RoutingRequest request) {
+        Map<String, Object> snapshot = demoCitizenSnapshotService.getLatest();
+        if (snapshot.isEmpty() || !"DEMO".equals(snapshot.get("mode"))) return;
+        Object scenarioValue = snapshot.get("scenario");
+        if (!(scenarioValue instanceof Map<?, ?>)) return;
+
+        Map<String, Object> scenario = (Map<String, Object>) scenarioValue;
+        request.setDemoMode(true);
+        Object revision = snapshot.get("revision");
+        if (revision instanceof Number number) request.setDemoRevision(number.longValue());
+        request.setDemoFloodLevel(asDouble(scenario.get("simulatedFloodLevel")));
+        request.setDemoEffectiveRainfallMm(asDouble(scenario.get("effectiveRainfallMm")));
+        request.setDemoSoilSaturationPct(asDouble(scenario.get("soilSaturationPct")));
+    }
+
+    private Double asDouble(Object value) {
+        return value instanceof Number number ? number.doubleValue() : null;
     }
 } // Kết thúc class

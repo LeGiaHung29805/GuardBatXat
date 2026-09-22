@@ -27,7 +27,7 @@ public class CommanderAnalysisRepository {
             SELECT COUNT(*) 
             FROM batxat_road_edges e
             LEFT JOIN batxat_daily_road_risk r ON e.u = r.u_node AND e.v = r.v_node AND e.key = r.key AND r.forecast_date = CURRENT_DATE
-            WHERE ((e.avg_elevation > 0 AND e.avg_elevation <= ?::numeric) OR r.landslide_prob > 0)
+            WHERE ((e.avg_elevation > 0 AND e.avg_elevation <= ?::numeric) OR r.landslide_prob >= 0.40)
               AND EXISTS (
                   SELECT 1 FROM batxatmoi bx 
                   WHERE ST_Intersects(e.geometry, ST_SetSRID(bx.geom, 4326))
@@ -124,7 +124,7 @@ public class CommanderAnalysisRepository {
                        ON e.u = r.u_node AND e.v = r.v_node AND e.key = r.key 
                       AND r.forecast_date = CURRENT_DATE
                 WHERE (e.avg_elevation > 0 AND e.avg_elevation <= ?::numeric) 
-                   OR r.landslide_prob > 0
+                   OR r.landslide_prob >= 0.40
                 GROUP BY bx.name_3
             )
             SELECT COALESCE(b.commune, r.commune) AS ten_khu_vuc,
@@ -140,15 +140,15 @@ public class CommanderAnalysisRepository {
         return jdbcTemplate.queryForList(sql, level, level);
     }
 
-    // 6. Dự báo diễn biến Mực nước & Lượng mưa lưu vực (14 mốc thời gian gần nhất)
+    // 6. Diễn biến dòng chảy SCS-CN & lượng mưa lưu vực (14 ngày gần nhất)
     public List<Map<String, Object>> getWaterLevelForecast() {
         String sql = """
-            SELECT ngay, luong_mua, muc_nuoc
+            SELECT ngay, luong_mua, luu_luong
             FROM (
                 SELECT record_date,
                        TO_CHAR(record_date, 'DD/MM') AS ngay,
                        COALESCE(basin_precip, 0) AS luong_mua,
-                       COALESCE(estimated_water_level, 0) AS muc_nuoc
+                       COALESCE(runoff_mean_discharge_m3s, 0) AS luu_luong
                 FROM batxat_basin_hydrology
                 ORDER BY record_date DESC
                 LIMIT 14

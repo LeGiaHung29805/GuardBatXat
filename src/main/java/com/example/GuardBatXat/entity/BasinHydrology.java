@@ -21,6 +21,21 @@ public class BasinHydrology {
     @Column(name = "estimated_water_level")
     private Double estimatedWaterLevel;
 
+    @Column(name = "effective_rainfall_mm")
+    private Double effectiveRainfallMm;
+
+    @Column(name = "runoff_volume_m3")
+    private Double runoffVolumeM3;
+
+    @Column(name = "runoff_mean_discharge_m3s")
+    private Double runoffMeanDischargeM3s;
+
+    @Column(name = "adjusted_curve_number")
+    private Double adjustedCurveNumber;
+
+    @Column(name = "hydrology_method")
+    private String hydrologyMethod;
+
     @Column(name = "is_event")
     private Boolean isEvent;
 

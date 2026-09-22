@@ -15,6 +15,7 @@
     import org.springframework.security.crypto.password.PasswordEncoder;
     import org.springframework.security.web.SecurityFilterChain;
     import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+    import org.springframework.http.HttpMethod;
 
     // Bổ sung các import cần thiết cho CORS
     import org.springframework.web.cors.CorsConfiguration;
@@ -69,7 +70,16 @@
                     .authorizeHttpRequests(auth -> auth
                             // PUBLIC endpoints (không cần token)
                             .requestMatchers("/api/v1/auth/**").permitAll()
-                            .requestMatchers("/api/v1/map/**").permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/v1/map/**").permitAll()
+                            .requestMatchers(HttpMethod.POST,
+                                    "/api/v1/map/check-safety",
+                                    "/api/v1/map/evacuation-route").permitAll()
+                            .requestMatchers("/api/v1/forecast/**").permitAll()
+                            .requestMatchers("/api/v1/citizen/risk-snapshots/**").permitAll()
+                            // Snapshot demo chi doc, cong khai va luon gan nhan MO PHONG.
+                            .requestMatchers(HttpMethod.GET, "/api/v1/citizen/demo-snapshots/**").permitAll()
+                            // Endpoint tự xác thực tiếp bằng X-Internal-Token.
+                            .requestMatchers("/api/internal/forecast-runs/**").permitAll()
                             .requestMatchers("/api/v1/safety/**").permitAll()
                             .requestMatchers("/api/v1/sos/send").permitAll()
                             .requestMatchers("/api/v1/routing/**").permitAll()

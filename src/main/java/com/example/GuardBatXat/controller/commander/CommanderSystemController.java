@@ -5,6 +5,7 @@ import com.example.GuardBatXat.dto.request.commander.NotificationSendRequest;
 import com.example.GuardBatXat.dto.response.rescue.ApiResponse;
 import com.example.GuardBatXat.dto.response.commander.NotificationResponse;
 import com.example.GuardBatXat.service.CommanderDashboardService;
+import com.example.GuardBatXat.service.DemoFloodSimulationService;
 import com.example.GuardBatXat.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ public class CommanderSystemController {
 
     private final CommanderDashboardService commanderDashboardService;
     private final NotificationService notificationService;
+    private final DemoFloodSimulationService demoFloodSimulationService;
 
     @GetMapping("/statistics/scenarios")
     public ResponseEntity<ApiResponse<List<String>>> getAvailableScenarios() {
@@ -37,6 +39,16 @@ public class CommanderSystemController {
                 .code(200)
                 .message("Lấy thống kê thành công")
                 .data(commanderDashboardService.getDashboardStats(level))
+                .build());
+    }
+
+    @PostMapping("/simulation/publish")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> publishSimulation(
+            @RequestParam("level") Double level) {
+        return ResponseEntity.ok(ApiResponse.<Map<String, Object>>builder()
+                .code(200)
+                .message("Đã công bố kịch bản mô phỏng tới màn hình Citizen")
+                .data(demoFloodSimulationService.publishCommanderWaterLevelScenario(level))
                 .build());
     }
 
